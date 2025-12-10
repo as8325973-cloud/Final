@@ -7,8 +7,8 @@ Global MMR Visualization Website 是一個用來瀏覽與管理各國孕產婦�
 系統的核心價值包含三個面向：
 
 國家與區域資料管理**
--以 ISO 國家碼（alpha-3）為主鍵管理國家基本資料。
--以 Region / SubRegion / IntermediateRegion 的階層式結構管理地理區域。
+- 以 ISO 國家碼（alpha-3）為主鍵管理國家基本資料。
+- 以 Region / SubRegion / IntermediateRegion 的階層式結構管理地理區域。
 
 **MMR 指標查詢與排序**
 -顯示單一國家歷年 MMR 變化。
