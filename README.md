@@ -18,8 +18,6 @@ Global MMR Visualization Website 是一個用來瀏覽與管理各國孕產婦�
 - 針對指定國家與年份，新增下一年度 MMR 或修改既有 MMR。
 - 依國家與年份區間批次刪除 MMR 紀錄，方便清理錯誤資料。
 
-這套系統也作為 資料庫正規化（3NF）與 ER 模型設計 的實作範例，後端資料以 MySQL 管理，前端網頁可彈性實作多種查詢介面與視覺化元件。
-
 ---
 
 ## 2) Page Map
@@ -51,15 +49,15 @@ class A,B,C,D,E,F,B1,C1,D1,E1,F1,F2,F3 high;
 ```
 ###功能說明
 
--**國家歷年 MMR 查詢（Country Trend）**
+- **國家歷年 MMR 查詢（Country Trend）**
 透過下拉選單選取國家，查詢 CountryMMR 表，依年份排序顯示 MMR 變化。
--**子區域年度 MMR 排序（Subregion Ranking）**
+- **子區域年度 MMR 排序（Subregion Ranking）**
 選擇子區域與年份，利用 Country + SubRegion + CountryMMR 的關聯，列出該子區域所有國家當年 MMR，並依數值排序。
--地區子區域最高 MMR 概覽（Region Overview）
+- **地區子區域最高 MMR 概覽（Region Overview）**
 選擇地區（Region）與年份，聚合該地區下所有子區域，在指定年份計算各子區域內國家 MMR 的最大值，排序顯示。
--**國家關鍵字搜尋（Country Search）**
+- **國家關鍵字搜尋（Country Search）**
 針對國家名稱做部分比對（LIKE 查詢），並為每個符合的國家抓出「最近有資料的年份」的 MMR，依 MMR 由低到高顯示。
--**MMR 資料維護（MMR Management）**
+- **MMR 資料維護（MMR Management）**
 以 CountryMMR(alpha3, year) 為主鍵，實作：
 新增某國家的下一年度 MMR。
 更新指定國家 + 年份的 MMR。
