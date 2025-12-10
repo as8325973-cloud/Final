@@ -1,0 +1,73 @@
+# Docker Compose 檔案格式版本
+version: '3.8'
+
+# 專案名稱 (可選, 預設為資料夾名稱)
+name: McDonaldApp
+
+# 定義要啟動的服務 (Service)
+services:
+
+  # 1. MySQL 資料庫服務
+  mysql:
+    # 使用 MySQL 官方映像檔
+    image: mysql:latest
+    # 容器名稱
+    container_name: mysql_db
+    # 設定虛擬網路別名，Web 服務可以透過這個別名連線到資料庫
+    networks:
+      mcdonald-app:
+        aliases:
+          - mysql
+    # 設定環境變數，用於初始化和配置 MySQL
+    environment:
+      # 使用環境變數來避免硬編碼密碼 (從 .env 檔案載入)
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    # 設置資料庫啟動後的健康檢查 (Health Check)
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    # 設定資料卷 (Volumes)
+    volumes:
+      # 確保資料庫資料持久化
+      # McDonaldVolume 會在第一次啟動時自動建立
+      - McDonaldVolume:/var/lib/mysql
+      # 將您的 McDump.sql 檔案掛載到初始化目錄
+      # 假設 McDump.sql 位於專案根目錄下
+      - ./McDump_Final.sql:/docker-entrypoint-initdb.d/McDump_Final.sql
+
+  # 2. Web 應用程式服務
+  webapp:
+    # 告知 Compose 使用當前目錄下的 Dockerfile 進行建置
+    build: .
+    # 容器名稱
+    container_name: mcdonald_webapp
+    # 確保 Web 服務在資料庫健康後才啟動
+    depends_on:
+      mysql:
+        condition: service_healthy
+    # 將容器的 Port 80 對應到主機的 Port 8080 (您可以修改 8080)
+    # 請注意：部署到遠端機器時，通常會使用您被分配到的 Port 號
+    ports:
+      - "8080:80"
+    # 連接到虛擬網路
+    networks:
+      - mcdonald-app
+    # 設定環境變數，讓 Web 應用程式可以從程式碼中存取
+    environment:
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+
+# 定義 Volumes，用於資料持久化
+volumes:
+  McDonaldVolume:
+
+# 定義虛擬網路
+networks:
+  mcdonald-app:
+    # 使用預設的 bridge 網路
