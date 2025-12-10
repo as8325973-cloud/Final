@@ -3,7 +3,7 @@
 erDiagram
     REGION {
         int    region_code PK
-        string region_name
+        string region_name 
     }
 
     SUBREGION {
@@ -39,7 +39,7 @@ erDiagram
     SUBREGION ||--o{ COUNTRY          : "contains"
     INTERMEDIATEREGION ||--o{ COUNTRY : "contains"
     COUNTRY ||--o{ COUNTRYMMR         : "has"
-
+```
 # Final
 資料表說明與用途
 1. Region（大區）
