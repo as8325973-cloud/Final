@@ -90,35 +90,51 @@ erDiagram
   
 
 用途
+
 - 儲存最高層級的地理區域，用來統整底下所有子區域。
 - 供「依地區查詢 / 分組」的功能使用，例如：選擇某個 Region 後再展開其所有 SubRegion。
 
 **4.2 SubRegion – 子區域資料表**
+
 欄位
--sub_region_code (INT, PK)：子區域代碼
--sub_region_name (VARCHAR)：子區域名稱（例如：Eastern Asia）
--region_code (INT, FK → Region.region_code)：所屬大區代碼
+
+- sub_region_code (INT, PK)：子區域代碼
+- sub_region_name (VARCHAR)：子區域名稱（例如：Eastern Asia）
+- region_code (INT, FK → Region.region_code)：所屬大區代碼
+
 用途
--將國家細分到較小的地理單位，用於：
--子區域內國家 MMR 排序
--地區 → 子區域 → 國家的階層式查詢
+
+- 將國家細分到較小的地理單位，用於：
+- 子區域內國家 MMR 排序
+- 地區 → 子區域 → 國家的階層式查詢
+
 關聯
--一個 Region 可擁有多個 SubRegion。
+
+- 一個 Region 可擁有多個 SubRegion。
 
 **4.3 IntermediateRegion – 中間區域資料表（若有）**
+
 欄位
-intermediate_region_code (INT, PK)：中間區代碼
-intermediate_region_name (VARCHAR)：中間區名稱
-sub_region_code (INT, FK → SubRegion.sub_region_code)：所屬子區域
+
+- intermediate_region_code (INT, PK)：中間區代碼
+- intermediate_region_name (VARCHAR)：中間區名稱
+- sub_region_code (INT, FK → SubRegion.sub_region_code)：所屬子區域
+
 用途
+
 - 若原始資料有額外一層區域分類（介於 SubRegion 與 Country 之間），則用此表表示。
 - 部分國家可能沒有中間區，對應的 intermediate_region_code 可以為 NULL。
+  
+
 關聯
+
 - 每個 IntermediateRegion 隸屬於一個 SubRegion。
 - 一個 IntermediateRegion 可包含多個 Country。
 
 **4.4 Country – 國家基本資料表**
+
 欄位
+
 - alpha3 (CHAR(3), PK)：ISO 3166-1 alpha-3 國家碼（核心主鍵）
 - name (VARCHAR)：國家名稱
 - alpha2 (CHAR(2), UNIQUE)：ISO 3166-1 alpha-2 國家碼
@@ -126,22 +142,26 @@ sub_region_code (INT, FK → SubRegion.sub_region_code)：所屬子區域
 - iso_3166_2 (VARCHAR)：ISO 3166-2 代碼
 - sub_region_code (INT, FK → SubRegion.sub_region_code)：所屬子區域
 - intermediate_region_code (INT, NULL, FK → IntermediateRegion.intermediate_region_code)：所屬中間區（可為 NULL）
+
 用途
+
 - 儲存所有「國家層級」的靜態資訊。
 - 作為 CountryMMR 的外鍵來源，所有 MMR 資料都需對應到一個合法國家。
 - 提供前端所有與國家相關的下拉選單、關鍵字搜尋與區域聚合查詢。
 
 **4.5 CountryMMR – 國家年度 MMR 資料表**
+
 欄位
+
 - alpha3 (CHAR(3), PK, FK → Country.alpha3)：國家代碼
 - year (INT, PK)：年份
 - mmr (FLOAT)：該國該年的孕產婦死亡率（每 100,000 活產）
+
 主鍵
-複合主鍵：(alpha3, year)
+
+- 複合主鍵：(alpha3, year)
 → 保證同一國家同一年只有一筆 MMR 資料。
+
 用途
-儲存各國 MMR 歷年指標，是所有查詢與排序功能的核心資料來源。
-支援：
-國家歷年 MMR 趨勢圖
-子區域 / 地區 年度 MMR 排序與聚合
-新增 / 更新 / 刪除 MMR 紀錄
+
+- 儲存各國 MMR 歷年指標，是所有查詢與排序功能的核心資料來源。
