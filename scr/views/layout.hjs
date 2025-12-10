@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <!-- 載入 Bootstrap CSS (假設您的 public 目錄有這個檔案) -->
+    <link rel="stylesheet" href="/bootstrap.min.css">
+    <link rel="stylesheet" href="/bootstrap-icons.min.css">
+    <!-- 載入 HTMX 和 Bootstrap JS -->
+    <script src="/htmx.min.js"></script>
+    <script src="/bootstrap.bundle.min.js"></script>
+</head>
+
+<body class="container">
+    <header class="text-center my-4">
+        <h1 class="text-primary">全球 MMR 可視化與管理系統</h1>
+    </header>
+
+    {{> navbar}}
+
+    <div id="toast" class="fixed top-0 right-0 p-3" style="z-index: 100;"></div>
+
+    <!-- 主內容區域，hx-target="#main" 將會替換此處內容 -->
+    <main id="main" class="my-4 p-4 border rounded shadow-sm bg-light">
+        {{{body_content}}}
+    </main>
+
+    <footer class="text-center text-muted mt-5 py-3 border-top">
+        <p>&copy; 2025 MMR Visualization Project</p>
+    </footer>
+
+
+</body>
+
+</html>
