@@ -82,9 +82,13 @@ erDiagram
 ```
 ## 4) Table Descriptions
 **4.1 Region – 大區資料表**
+
 欄位
+
 - region_code (INT, PK)：大區代碼（例如：002, 019）
 - region_name (VARCHAR)：大區名稱（例如：Africa, Americas）
+  
+
 用途
 - 儲存最高層級的地理區域，用來統整底下所有子區域。
 - 供「依地區查詢 / 分組」的功能使用，例如：選擇某個 Region 後再展開其所有 SubRegion。
