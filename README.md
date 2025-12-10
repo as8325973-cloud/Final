@@ -1,4 +1,5 @@
 # Final
+```mermaid
 erDiagram
     REGION {
         int    region_code PK
