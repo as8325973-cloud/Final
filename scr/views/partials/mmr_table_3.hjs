@@ -1,0 +1,12 @@
+{{#data}}
+
+<tr>
+    <td>{{sub_region_name}}</td>
+    <td>{{max_mmr}}</td>
+</tr>
+{{/data}}
+{{^data}}
+<tr>
+    <td colspan="2">找不到該區域在指定年份的最大 MMR 記錄</td>
+</tr>
+{{/data}}

@@ -5,48 +5,69 @@ const bcrypt = require('bcryptjs');
 
 const app = express.Router();
 
-// GET /auth/signin  顯示登入頁
-app.get('/auth/signin', (req, res) => {
-  // 沒有啟用 session 時 req.session 會是 undefined
+// 設定 connection 注入 (從 app.js 注入)
+app.connection = null;
+
+// GET /signin  顯示登入頁
+app.get('/signin', (req, res) => {
+  // 如果已登入，導向 Dashboard
+  if (req.session && req.session.user) {
+    return res.redirect('/dashboard'); 
+  }
+  
+  // 💡 修正: 從 Session 中取出錯誤訊息 (如果有)
+  const errorMessage = req.session.error;
+  // 💡 清除 Session 中的錯誤，確保只顯示一次
+  delete req.session.error;
+
+  // 渲染登入頁
+  res.render('signin', { 
+    title: 'Sign In',
+    error: errorMessage, // 傳遞 Session 中取出的錯誤
+  });
+});
+
+// GET /signup 顯示註冊頁
+app.get('/signup', (req, res) => {
   if (req.session && req.session.user) {
     return res.redirect('/dashboard');
   }
 
-
-  res.render('auth/signin', {
-    title: 'Sign In',
-    partials: { navbar: null },
+  res.render('signup', { 
+    title: 'Sign Up',
     error: null,
   });
 });
 
-app.post('/auth/signin', (req, res) => {
-  const { email, password } = req.body;
+// POST /signin 處理登入
+app.post('/signin', (req, res) => {
+  const { email, password } = req.body || {};
 
   const SQL = `SELECT id, email, password_hash, name 
                FROM User WHERE email = ?`;
 
+  // 💡 修正：確保這裡使用 app.connection.execute
   app.connection.execute(SQL, [email], async (err, rows) => {
     if (err) {
-      return res.render("auth/signin", {
-        error: "系統錯誤，請稍後再試"
-      });
+      console.error('Database error during signin:', err);
+      // 💡 修正: 登入失敗時，將錯誤存入 Session 並重定向
+      req.session.error = "系統錯誤，請稍後再試";
+      return res.redirect("/signin");
     }
 
     if (rows.length === 0) {
-      return res.render("auth/signin", {
-        error: "Email 或密碼錯誤"
-      });
+      // 💡 修正: 登入失敗時，將錯誤存入 Session 並重定向
+      req.session.error = "Email 或密碼錯誤";
+      return res.redirect("/signin");
     }
 
     const user = rows[0];
-    const bcrypt = require("bcryptjs");
-    const match = await bcrypt.compare(password, user.password_hash);
+    const match = await bcrypt.compare(password, user.password_hash); 
 
     if (!match) {
-      return res.render("auth/signin", {
-        error: "Email 或密碼錯誤"
-      });
+      // 💡 修正: 登入失敗時，將錯誤存入 Session 並重定向
+      req.session.error = "Email 或密碼錯誤";
+      return res.redirect("/signin");
     }
 
     // ✔ 登入成功
@@ -56,40 +77,54 @@ app.post('/auth/signin', (req, res) => {
       email: user.email
     };
 
+    // 重導向到 /dashboard
     return res.redirect("/dashboard");
   });
 })
 
 
-// POST /auth/signup  處理登入
+// POST /signup  處理註冊
 app.post('/signup', (req, res) => {
-  const { email, name, password } = req.body;
+  // 💡 修正：取得 company_name 欄位
+  const { email, name, password } = req.body; 
 
   // 1. 先把密碼 hash 起來
   bcrypt.hash(password, 10).then((hash) => {
+    // 💡 修正：User Table 必須包含 company_name
     const SQL = `
       INSERT INTO User (email, password_hash, name)
-      VALUES (?, ?, ?)
+      VALUES (?, ?, ?, ?)
     `;
 
     app.connection.execute(SQL, [email, hash, name], (err, result) => {
       if (err) {
         console.log('Error inserting user: ', err);
-        return res.render('auth/signup', {
-          title: 'Sign Up',
-          error: 'Email 已被使用或系統錯誤。',
-        });
+        // 💡 修正: 註冊失敗時，將錯誤存入 Session 並重定向
+        req.session.error = 'Email 已被使用或系統錯誤。';
+        return res.redirect("/signup");
       }
 
       // 2. 註冊完成後可直接幫他登入
       req.session.user = {
         id: result.insertId,
         email,
-        name,
+        name,        
       };
 
+      // 重導向到 /dashboard
       res.redirect('/dashboard');
     });
+  });
+});
+
+// GET /signout  處理登出
+app.get('/signout', (req, res) => {
+  req.session.destroy(err => {
+    if (err) {
+      console.error('Session destruction error:', err);
+    }
+    // 導回 /signin
+    res.redirect('/signin');
   });
 });
 

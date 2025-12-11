@@ -1,33 +1,23 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark" hx-boost="true" hx-target="#main" hx-swap="outerHTML">
-<div class="container-fluid">
-<a class="navbar-brand" href="/">MMR Home</a>
-<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-<span class="navbar-toggler-icon"></span>
-</button>
-<div class="collapse navbar-collapse" id="navbarNav">
-<ul class="navbar-nav me-auto mb-2 mb-lg-0">
-
-            <li class="nav-item">
-                <a class="nav-link" href="/countries">國家趨勢查詢</a>
-            </li>
-            
-            <li class="nav-item">
-                <a class="nav-link" href="/rankings">年度排序查詢</a>
-            </li>
-
-            <!-- MMR 資料維護下拉選單 -->
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" id="mmrDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    資料維護 (CRUD)
-                </a>
-                <ul class="dropdown-menu" aria-labelledby="mmrDropdown">
-                    <li><a class="dropdown-item" href="/management/add">新增/修改 MMR</a></li>
-                    <li><a class="dropdown-item" href="/management/delete">批次刪除 MMR</a></li>
-                </ul>
-            </li>
-        </ul>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand" href="/dashboard">
+            <i class="bi bi-bar-chart-line-fill me-2"></i>MMR 
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <span class="nav-link text-white-50">歡迎，{{#user}}{{name}}{{/user}}</span>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link btn btn-sm btn-outline-light ms-2" href="/signout">
+                        <i class="bi bi-box-arrow-right"></i> 登出
+                    </a>
+                </li>
+            </ul>
+        </div>
     </div>
-</div>
-
-
 </nav>

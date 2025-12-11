@@ -1,0 +1,12 @@
+{{#data}}
+
+<tr>
+    <td>{{year}}</td>
+    <td>{{mmr}}</td>
+</tr>
+{{/data}}
+{{^data}}
+<tr>
+    <td colspan="2">找不到 MMR 記錄</td>
+</tr>
+{{/data}}
