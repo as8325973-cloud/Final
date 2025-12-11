@@ -1,11 +1,30 @@
 const express = require('express');
 const db = require('mysql2');
+const session = require('express-session');   // ✅ 新增：session
+const path = require('path');
 
 const app = express();
-app.set('views', __dirname + '/views');
+
+// ✅ 告訴 Express：view 檔在 /scr/views
+app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hjs');
+
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"));
+
+
+
+// ✅ 啟用 session（先用預設記憶體即可，之後要用 MySQL store 再說）
+app.use(
+  session({
+    secret: 'someVerySecretString', // 之後可搬到環境變數
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      maxAge: 1000 * 60 * 60 * 2, // 2 小時
+    },
+  })
+);
 
 const configs = require('./config');
 const connection = db.createConnection(configs.db);
@@ -14,12 +33,21 @@ connection.connect((err) => {
   if (err) {
     console.log("Error connecting to database: ", err);
     process.exit();
-  }
-  else {
+  } else {
     console.log("Connected to database");
   }
 });
 
+// ====== 掛上 router（一定要在 wildcard 之前） ======
+const auth = require('./routes/auth');
+auth.connection = connection;
+app.use('/auth', auth);
+
+const api = require('./routes/api');
+api.connection = connection;
+app.use('/api', api);
+
+// ====== 首頁 ======
 app.get('/', (req, res) => {
   if (req.get("HX-Request")) {
     res.send(
@@ -27,10 +55,9 @@ app.get('/', (req, res) => {
       '<i class="bi bi-cup-hot" style="font-size: 50vh;"></i>' +
       '</div>'
     );
-  }
-  else {
+  } else {
     res.render('layout', {
-      title: 'Welcome to McDonald e-management',
+      title: 'Welcome to Final e-management',
       partials: {
         navbar: 'navbar',
       }
@@ -38,13 +65,25 @@ app.get('/', (req, res) => {
   }
 });
 
+// ====== Dashboard（需要登入） ======
+app.get('/dashboard', (req, res) => {
+  if (!req.session || !req.session.user) {
+    return res.redirect('/auth/signin');
+  }
+
+  res.render('dashboard', {
+    title: "MMR Dashboard",
+    partials: { navbar: 'navbar' }
+  });
+});
+
+// ====== wildcard：最後再捕捉其他頁面 ======
 app.get(/.*/, (req, res, next) => {
   if (req.get("HX-Request")) {
     next();
-  }
-  else {
+  } else {
     res.render('layout', {
-      title: 'Welcome to McDonald e-management',
+      title: 'Welcome to The Final e-management',
       partials: {
         navbar: 'navbar',
       },
@@ -53,11 +92,8 @@ app.get(/.*/, (req, res, next) => {
   }
 });
 
-const auth = require('./routes/auth');   // 或 './auth' 看你 auth.js 放哪
-auth.connection = connection;
-app.use('/auth', auth);
 
 
 app.listen(80, function () {
   console.log('Web server listening on port 80!');
-}); 
+});

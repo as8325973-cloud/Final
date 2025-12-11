@@ -1,15 +1,17 @@
 // routes/auth.js
 const express = require('express');
-const bcrypt  = require('bcryptjs');
+const bcrypt = require('bcryptjs');
+
 
 const app = express.Router();
 
 // GET /auth/signin  顯示登入頁
-app.get('/signin', (req, res) => {
+app.get('/auth/signin', (req, res) => {
   // 沒有啟用 session 時 req.session 會是 undefined
   if (req.session && req.session.user) {
-    return res.redirect('/');
+    return res.redirect('/dashboard');
   }
+
 
   res.render('auth/signin', {
     title: 'Sign In',
@@ -18,8 +20,48 @@ app.get('/signin', (req, res) => {
   });
 });
 
+app.post('/auth/signin', (req, res) => {
+  const { email, password } = req.body;
 
-// POST /auth/signin  處理登入
+  const SQL = `SELECT id, email, password_hash, name 
+               FROM User WHERE email = ?`;
+
+  app.connection.execute(SQL, [email], async (err, rows) => {
+    if (err) {
+      return res.render("auth/signin", {
+        error: "系統錯誤，請稍後再試"
+      });
+    }
+
+    if (rows.length === 0) {
+      return res.render("auth/signin", {
+        error: "Email 或密碼錯誤"
+      });
+    }
+
+    const user = rows[0];
+    const bcrypt = require("bcryptjs");
+    const match = await bcrypt.compare(password, user.password_hash);
+
+    if (!match) {
+      return res.render("auth/signin", {
+        error: "Email 或密碼錯誤"
+      });
+    }
+
+    // ✔ 登入成功
+    req.session.user = {
+      id: user.id,
+      name: user.name,
+      email: user.email
+    };
+
+    return res.redirect("/dashboard");
+  });
+})
+
+
+// POST /auth/signup  處理登入
 app.post('/signup', (req, res) => {
   const { email, name, password } = req.body;
 
@@ -46,7 +88,7 @@ app.post('/signup', (req, res) => {
         name,
       };
 
-      res.redirect('/');
+      res.redirect('/dashboard');
     });
   });
 });

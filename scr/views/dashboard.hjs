@@ -1,0 +1,76 @@
+<div class="container mt-4">
+
+  <h2 class="mb-4">MMR 指標資料分析面板</h2>
+
+  <!-- 功能一：依國家顯示歷年 MMR -->
+  <div class="card mb-4">
+    <div class="card-header fw-bold">1️⃣ 依國家顯示歷年 MMR</div>
+    <div class="card-body">
+      <label class="form-label">選擇國家</label>
+      <select id="countrySelect" class="form-select mb-3"></select>
+
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>年份</th>
+            <th>MMR</th>
+          </tr>
+        </thead>
+        <tbody id="countryHistoryTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 功能二：次區域 + 年份 -->
+  <div class="card mb-4">
+    <div class="card-header fw-bold">2️⃣ 依次區域 + 年份顯示 MMR</div>
+    <div class="card-body">
+
+      <label class="form-label">選擇次區域</label>
+      <select id="subRegionSelect" class="form-select mb-3"></select>
+
+      <label class="form-label">選擇年份</label>
+      <select id="subRegionYearSelect" class="form-select mb-3"></select>
+
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>國家</th>
+            <th>MMR</th>
+          </tr>
+        </thead>
+        <tbody id="subRegionYearTable"></tbody>
+      </table>
+
+    </div>
+  </div>
+
+  <!-- 功能三：區域 + 年份 -->
+  <div class="card mb-4">
+    <div class="card-header fw-bold">3️⃣ 區域各次區域最高 MMR</div>
+    <div class="card-body">
+
+      <label class="form-label">選擇區域</label>
+      <select id="regionSelect" class="form-select mb-3"></select>
+
+      <label class="form-label">選擇年份</label>
+      <select id="regionYearSelect" class="form-select mb-3"></select>
+
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>次區域</th>
+            <th>最高 MMR</th>
+          </tr>
+        </thead>
+        <tbody id="regionMaxTable"></tbody>
+      </table>
+
+    </div>
+  </div>
+
+  <!-- 其餘功能（4～8）也會依照這種卡片式 UI 加上去 -->
+
+</div>
+
+<script src="/js/dashboard.js"></script>
