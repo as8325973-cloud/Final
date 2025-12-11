@@ -6,69 +6,48 @@ const app = express.Router();
 
 // GET /auth/signin  顯示登入頁
 app.get('/signin', (req, res) => {
-  // 已登入就直接丟回首頁
-  if (req.session.user) {
+  // 沒有啟用 session 時 req.session 會是 undefined
+  if (req.session && req.session.user) {
     return res.redirect('/');
   }
 
   res.render('auth/signin', {
-    title: 'Sign In - FlowBuilder',
-    partials: { navbar: null }, // 登入頁通常不顯示 navbar
+    title: 'Sign In',
+    partials: { navbar: null },
     error: null,
   });
 });
 
+
 // POST /auth/signin  處理登入
-app.post('/signin', (req, res) => {
-  const { email, password } = req.body;
+app.post('/signup', (req, res) => {
+  const { email, name, password } = req.body;
 
-  const SQL = 'SELECT id, email, password_hash, name FROM User WHERE email = ?';
+  // 1. 先把密碼 hash 起來
+  bcrypt.hash(password, 10).then((hash) => {
+    const SQL = `
+      INSERT INTO User (email, password_hash, name)
+      VALUES (?, ?, ?)
+    `;
 
-  app.connection.execute(SQL, [email], async (err, rows) => {
-    if (err) {
-      console.log('Error querying user: ', err);
-      return res.render('auth/signin', {
-        title: 'Sign In - FlowBuilder',
-        partials: { navbar: null },
-        error: '系統發生錯誤，請稍後再試。',
-      });
-    }
+    app.connection.execute(SQL, [email, hash, name], (err, result) => {
+      if (err) {
+        console.log('Error inserting user: ', err);
+        return res.render('auth/signup', {
+          title: 'Sign Up',
+          error: 'Email 已被使用或系統錯誤。',
+        });
+      }
 
-    if (rows.length === 0) {
-      // 找不到這個 email
-      return res.render('auth/signin', {
-        title: 'Sign In - FlowBuilder',
-        partials: { navbar: null },
-        error: 'Email 或密碼錯誤。',
-      });
-    }
+      // 2. 註冊完成後可直接幫他登入
+      req.session.user = {
+        id: result.insertId,
+        email,
+        name,
+      };
 
-    const user = rows[0];
-
-    const ok = await bcrypt.compare(password, user.password_hash);
-    if (!ok) {
-      return res.render('auth/signin', {
-        title: 'Sign In - FlowBuilder',
-        partials: { navbar: null },
-        error: 'Email 或密碼錯誤。',
-      });
-    }
-
-    // 比對成功 → 設定 session
-    req.session.user = {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-    };
-
-    res.redirect('/');
-  });
-});
-
-// GET /auth/signout  登出
-app.get('/signout', (req, res) => {
-  req.session.destroy(() => {
-    res.redirect('/auth/signin');
+      res.redirect('/');
+    });
   });
 });
 

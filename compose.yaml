@@ -2,7 +2,7 @@
 version: '3.8'
 
 # 專案名稱 (可選, 預設為資料夾名稱)
-name: McDonaldApp
+name: FinalApp
 
 # 定義要啟動的服務 (Service)
 services:
@@ -15,7 +15,7 @@ services:
     container_name: mysql_db
     # 設定虛擬網路別名，Web 服務可以透過這個別名連線到資料庫
     networks:
-      mcdonald-app:
+      final-app:
         aliases:
           - mysql
     # 設定環境變數，用於初始化和配置 MySQL
@@ -34,8 +34,8 @@ services:
     # 設定資料卷 (Volumes)
     volumes:
       # 確保資料庫資料持久化
-      # McDonaldVolume 會在第一次啟動時自動建立
-      - McDonaldVolume:/var/lib/mysql
+      # FinalVolume 會在第一次啟動時自動建立
+      - FinalVolume:/var/lib/mysql
       # 將您的 McDump.sql 檔案掛載到初始化目錄
       # 假設 McDump.sql 位於專案根目錄下
       - ./McDump_Final.sql:/docker-entrypoint-initdb.d/McDump_Final.sql
@@ -45,7 +45,7 @@ services:
     # 告知 Compose 使用當前目錄下的 Dockerfile 進行建置
     build: .
     # 容器名稱
-    container_name: mcdonald_webapp
+    container_name: final_webapp
     # 確保 Web 服務在資料庫健康後才啟動
     depends_on:
       mysql:
@@ -56,7 +56,7 @@ services:
       - "8080:80"
     # 連接到虛擬網路
     networks:
-      - mcdonald-app
+      - final-app
     # 設定環境變數，讓 Web 應用程式可以從程式碼中存取
     environment:
       MYSQL_USER: ${MYSQL_USER}
@@ -65,9 +65,9 @@ services:
 
 # 定義 Volumes，用於資料持久化
 volumes:
-  McDonaldVolume:
+  finalVolume:
 
 # 定義虛擬網路
 networks:
-  mcdonald-app:
+  final-app:
     # 使用預設的 bridge 網路

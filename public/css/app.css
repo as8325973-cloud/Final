@@ -1,0 +1,180 @@
+/* ==========================
+ * Global Layout & Typography
+ * ========================== */
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+  background: radial-gradient(circle at top, #e3f2ff 0, #f5f7fb 40%, #f7f7f7 100%);
+  color: #212529;
+}
+
+/* 讓整個內容在大螢幕時不要太寬，手機時有 padding */
+body.container {
+  max-width: 1200px;
+  padding: 0 1.25rem 2rem;
+}
+
+/* 頁首標題區 */
+header {
+  text-align: center;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+header h1 {
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+header p {
+  font-size: 0.95rem;
+}
+
+/* 統一 main 區的最小高度 */
+main#main {
+  min-height: 60vh;
+}
+
+/* Toast 區塊右上角 */
+#toast {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+}
+
+/* ==========================
+ * Navbar
+ * ========================== */
+
+.navbar {
+  border-radius: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.navbar-brand {
+  font-weight: 600;
+}
+
+.navbar-nav .nav-link {
+  font-weight: 500;
+}
+
+/* ==========================
+ * Auth / Signin Page
+ * ========================== */
+
+/* 外層：讓登入卡片在畫面置中 */
+.auth-container {
+  min-height: calc(100vh - 180px); /* 扣掉 header 的高度 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 登入卡片基本樣式 */
+.auth-card {
+  border: none;
+  border-radius: 1.25rem;
+  max-width: 440px;
+  width: 100%;
+  background: #ffffff;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.12);
+}
+
+/* 卡片內部 padding 在視窗較小時縮小一點 */
+.auth-card .card-body {
+  padding: 2.5rem;
+}
+
+@media (max-width: 576px) {
+  .auth-card .card-body {
+    padding: 2rem 1.75rem;
+  }
+}
+
+/* 標題區 */
+.auth-card .display-5 {
+  font-size: 2rem;
+}
+
+.auth-card .text-muted {
+  font-size: 0.95rem;
+}
+
+/* 表單欄位 */
+.auth-card .form-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.auth-card .form-control {
+  border-radius: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid #d0d7e2;
+}
+
+.auth-card .form-control:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.12);
+}
+
+/* Sign in 按鈕 */
+.auth-card .btn-primary {
+  border-radius: 0.9rem;
+  font-weight: 600;
+  padding: 0.6rem 1rem;
+  box-shadow: 0 8px 18px rgba(13, 110, 253, 0.35);
+}
+
+.auth-card .btn-primary:hover {
+  box-shadow: 0 10px 22px rgba(13, 110, 253, 0.45);
+}
+
+/* 底下小文字與連結 */
+.auth-card .auth-footer-text {
+  font-size: 0.85rem;
+}
+
+.auth-card .auth-footer-text a {
+  text-decoration: none;
+}
+
+.auth-card .auth-footer-text a:hover {
+  text-decoration: underline;
+}
+
+/* 錯誤訊息區塊微調 */
+.auth-card .alert {
+  border-radius: 0.75rem;
+  font-size: 0.9rem;
+}
+
+/* ==========================
+ * Generic Card / Table Styles
+ * （未來 dashboard / 列表頁也可以沿用）
+ * ========================== */
+
+.card {
+  border-radius: 0.9rem;
+}
+
+.table {
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.table thead th {
+  background-color: #0d6efd;
+  color: #fff;
+  border-color: #0b5ed7;
+}
+
+.table tbody tr:nth-child(even) {
+  background-color: #f3f6fb;
+}

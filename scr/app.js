@@ -2,7 +2,7 @@ const express = require('express');
 const db = require('mysql2');
 
 const app = express();
-
+app.set('views', __dirname + '/views');
 app.set('view engine', 'hjs');
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"));
@@ -53,17 +53,10 @@ app.get(/.*/, (req, res, next) => {
   }
 });
 
-const categories = require('./routes/categories');
-categories.connection = connection;
-app.use('/categories', categories);
+const auth = require('./routes/auth');   // 或 './auth' 看你 auth.js 放哪
+auth.connection = connection;
+app.use('/auth', auth);
 
-const products = require('./routes/products');
-products.connection = connection;
-app.use('/products', products);
-
-const productNutrition = require('./routes/pNutritions');
-productNutrition.connection = connection;
-app.use('/pNutritions', productNutrition);
 
 app.listen(80, function () {
   console.log('Web server listening on port 80!');
