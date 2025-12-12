@@ -20,9 +20,7 @@ mmr.getAllCountries = (callback) => {
     -- 如果你也想排除 mmr 欄位是 NULL 的資料，加這行：
     -- WHERE M.mmr IS NOT NULL
     ORDER BY C.name ASC
-  `;
-    
-
+  `;   
     connection.query(sql, callback);
 };
 
@@ -36,6 +34,44 @@ mmr.getAllSubRegions = (callback) => {
 mmr.getAllRegions = (callback) => {
     const sql = `SELECT region_code, region_name FROM Region ORDER BY region_name ASC`;
    connection.query(sql, callback);
+};
+
+//年份
+mmr.getYearsByRegion = (regionCode, callback) => {
+  const sql = `
+    SELECT DISTINCT CMMR.year AS year
+    FROM Region R
+    JOIN SubRegion SR ON R.region_code = SR.region_code
+    JOIN Country C ON SR.sub_region_code = C.sub_region_code
+    JOIN CountryMMR CMMR ON C.alpha3 = CMMR.alpha3
+    WHERE R.region_code = ?
+      AND CMMR.mmr IS NOT NULL
+    ORDER BY CMMR.year DESC
+  `;
+  connection.query(sql, [regionCode], callback);
+};
+
+mmr.getYearsBySubRegion = (subRegionCode, callback) => {
+  const sql = `
+    SELECT DISTINCT CMMR.year AS year
+    FROM Country C
+    JOIN CountryMMR CMMR ON C.alpha3 = CMMR.alpha3
+    WHERE C.sub_region_code = ?
+      AND CMMR.mmr IS NOT NULL
+    ORDER BY CMMR.year DESC
+  `;
+  connection.query(sql, [subRegionCode], callback);
+};
+
+mmr.getYearsByCountry = (alpha3, callback) => {
+  const sql = `
+    SELECT DISTINCT year
+    FROM CountryMMR
+    WHERE alpha3 = ?
+      AND mmr IS NOT NULL
+    ORDER BY year DESC
+  `;
+  connection.query(sql, [alpha3], callback);
 };
 
 // -----------------------------------------------------------

@@ -64,6 +64,57 @@ router.get("/years", requireLogin, (req, res) => {
     });
 });
 
+// 依 Region 取得「該區域有資料」的年份清單（JSON）
+router.get("/years/region", requireLogin, (req, res) => {
+  const { regionCode } = req.query;
+  if (!regionCode || regionCode === "undefined") {
+    return res.json([]);
+  }
+
+  mmrModel.getYearsByRegion(regionCode, (err, rows) => {
+    if (err) {
+      console.error("Error fetching years by region:", err);
+      return res.status(500).json({ error: "Failed to fetch years by region." });
+    }
+    res.json(rows); // [{year: 2020}, {year: 2019}, ...]
+  });
+});
+
+// （可選但建議）依 SubRegion 取得「該次區域有資料」的年份清單（JSON）
+router.get("/years/subregion", requireLogin, (req, res) => {
+  const { subRegionCode } = req.query;
+  if (!subRegionCode || subRegionCode === "undefined") {
+    return res.json([]);
+  }
+
+  mmrModel.getYearsBySubRegion(subRegionCode, (err, rows) => {
+    if (err) {
+      console.error("Error fetching years by subregion:", err);
+      return res.status(500).json({ error: "Failed to fetch years by subregion." });
+    }
+    res.json(rows);
+  });
+});
+
+// 依國家取得「該國家有資料」的年份清單（JSON）
+router.get("/years/country", requireLogin, (req, res) => {
+  const { alpha3 } = req.query;
+
+  if (!alpha3 || alpha3 === "undefined") {
+    return res.json([]);
+  }
+
+  mmrModel.getYearsByCountry(alpha3, (err, rows) => {
+    if (err) {
+      console.error("Error fetching years by country:", err);
+      return res.status(500).json({ error: "Failed to fetch years by country." });
+    }
+    res.json(rows); // [{year: 2020}, {year: 2019}, ...]
+  });
+});
+
+
+
 // -----------------------------------------------------------
 // 功能 1 — 依國家查詢歷年 MMR (✅ JSON 版本給 fetch 用)
 // GET /api/mmr/history/json?alpha3=USA
