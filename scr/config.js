@@ -1,16 +1,4 @@
 const config = {
-  db: {
-    host: "172.17.0.3",
-    user: "Final",
-    password: "FinalPassword",
-    database: "Final",
-    connectTimeout: 60000
-  },
-};
-
-module.exports = config;
-/* // 確保連線資訊從環境變數中讀取
-const config = {
     db: {
         // 在 Docker Compose 網路中，服務名稱 'mysql' 即為資料庫主機名稱
         host: "mysql", 
@@ -24,4 +12,4 @@ const config = {
     },
 };
 
-module.exports = config; */
+module.exports = config;

@@ -94,3 +94,79 @@ async function loadCountryHistory() {
     tbody.innerHTML = `<tr><td colspan="2">查詢失敗：網路或伺服器錯誤</td></tr>`;
   }
 }
+
+// ---------- 工具：保留第一個 placeholder，其餘全部換成 years ----------
+function replaceYearOptionsKeepPlaceholder(selectId, years) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+
+  while (sel.options.length > 1) sel.remove(1);
+
+  years.forEach(y => {
+    const opt = document.createElement("option");
+    opt.value = y;
+    opt.textContent = y;
+    sel.appendChild(opt);
+  });
+
+  // 預設回到 placeholder
+  sel.selectedIndex = 0;
+}
+
+// ---------- 依國家載入年份 ----------
+async function loadYearsByCountry(alpha3) {
+  if (!alpha3 || alpha3 === "undefined") return [];
+  const res = await fetch(`/api/years/country?alpha3=${encodeURIComponent(alpha3)}`, {
+    headers: { "Accept": "application/json" }
+  });
+  if (!res.ok) return [];
+  const rows = await res.json();     // [{year: 2020}, ...]
+  return rows.map(r => r.year);      // [2020, 2019, ...]
+}
+
+// ---------- 更新 MMR：國家變動 -> 更新年份下拉 ----------
+async function bindUpdateYearByCountry() {
+  const countrySel = document.getElementById("updateCountrySelect"); // 你更新區塊的國家 select id
+  if (!countrySel) return;
+
+  countrySel.addEventListener("change", async () => {
+    const years = await loadYearsByCountry(countrySel.value);
+    replaceYearOptionsKeepPlaceholder("updateYear", years);   // 更新區塊的年份 select id
+  });
+
+  // 若載入頁面時 countrySel 已經有預設值（不是 placeholder），也可先載一次
+  if (countrySel.value && countrySel.value !== "undefined") {
+    const years = await loadYearsByCountry(countrySel.value);
+    replaceYearOptionsKeepPlaceholder("updateYear", years);
+  } else {
+    replaceYearOptionsKeepPlaceholder("updateYear", []);
+  }
+}
+
+// ---------- 刪除 MMR：國家變動 -> 更新起訖年份下拉 ----------
+async function bindDeleteYearsByCountry() {
+  const countrySel = document.getElementById("deleteCountrySelect"); // 你刪除區塊的國家 select id
+  if (!countrySel) return;
+
+  countrySel.addEventListener("change", async () => {
+    const years = await loadYearsByCountry(countrySel.value);
+    replaceYearOptionsKeepPlaceholder("deleteYearStart", years); // 起始年份 select id
+    replaceYearOptionsKeepPlaceholder("deleteYearEnd", years);   // 結束年份 select id
+  });
+
+  if (countrySel.value && countrySel.value !== "undefined") {
+    const years = await loadYearsByCountry(countrySel.value);
+    replaceYearOptionsKeepPlaceholder("deleteYearStart", years);
+    replaceYearOptionsKeepPlaceholder("deleteYearEnd", years);
+  } else {
+    replaceYearOptionsKeepPlaceholder("deleteYearStart", []);
+    replaceYearOptionsKeepPlaceholder("deleteYearEnd", []);
+  }
+}
+
+// ---------- 啟動 ----------
+document.addEventListener("DOMContentLoaded", () => {
+  bindUpdateYearByCountry();
+  bindDeleteYearsByCountry();
+});
+

@@ -66,51 +66,51 @@ router.get("/years", requireLogin, (req, res) => {
 
 // 依 Region 取得「該區域有資料」的年份清單（JSON）
 router.get("/years/region", requireLogin, (req, res) => {
-  const { regionCode } = req.query;
-  if (!regionCode || regionCode === "undefined") {
-    return res.json([]);
-  }
-
-  mmrModel.getYearsByRegion(regionCode, (err, rows) => {
-    if (err) {
-      console.error("Error fetching years by region:", err);
-      return res.status(500).json({ error: "Failed to fetch years by region." });
+    const { regionCode } = req.query;
+    if (!regionCode || regionCode === "undefined") {
+        return res.json([]);
     }
-    res.json(rows); // [{year: 2020}, {year: 2019}, ...]
-  });
+
+    mmrModel.getYearsByRegion(regionCode, (err, rows) => {
+        if (err) {
+            console.error("Error fetching years by region:", err);
+            return res.status(500).json({ error: "Failed to fetch years by region." });
+        }
+        res.json(rows); // [{year: 2020}, {year: 2019}, ...]
+    });
 });
 
 // （可選但建議）依 SubRegion 取得「該次區域有資料」的年份清單（JSON）
 router.get("/years/subregion", requireLogin, (req, res) => {
-  const { subRegionCode } = req.query;
-  if (!subRegionCode || subRegionCode === "undefined") {
-    return res.json([]);
-  }
-
-  mmrModel.getYearsBySubRegion(subRegionCode, (err, rows) => {
-    if (err) {
-      console.error("Error fetching years by subregion:", err);
-      return res.status(500).json({ error: "Failed to fetch years by subregion." });
+    const { subRegionCode } = req.query;
+    if (!subRegionCode || subRegionCode === "undefined") {
+        return res.json([]);
     }
-    res.json(rows);
-  });
+
+    mmrModel.getYearsBySubRegion(subRegionCode, (err, rows) => {
+        if (err) {
+            console.error("Error fetching years by subregion:", err);
+            return res.status(500).json({ error: "Failed to fetch years by subregion." });
+        }
+        res.json(rows);
+    });
 });
 
 // 依國家取得「該國家有資料」的年份清單（JSON）
 router.get("/years/country", requireLogin, (req, res) => {
-  const { alpha3 } = req.query;
+    const { alpha3 } = req.query;
 
-  if (!alpha3 || alpha3 === "undefined") {
-    return res.json([]);
-  }
-
-  mmrModel.getYearsByCountry(alpha3, (err, rows) => {
-    if (err) {
-      console.error("Error fetching years by country:", err);
-      return res.status(500).json({ error: "Failed to fetch years by country." });
+    if (!alpha3 || alpha3 === "undefined") {
+        return res.json([]);
     }
-    res.json(rows); // [{year: 2020}, {year: 2019}, ...]
-  });
+
+    mmrModel.getYearsByCountry(alpha3, (err, rows) => {
+        if (err) {
+            console.error("Error fetching years by country:", err);
+            return res.status(500).json({ error: "Failed to fetch years by country." });
+        }
+        res.json(rows); // [{year: 2020}, {year: 2019}, ...]
+    });
 });
 
 
@@ -267,7 +267,9 @@ router.post("/mmr/update", requireLogin, (req, res) => {
 });
 
 router.delete("/mmr/delete", requireLogin, (req, res) => {
-    const { alpha3, year_start, year_end } = req.body;
+    const alpha3 = req.body?.alpha3 ?? req.query?.alpha3;
+    const year_start = req.body?.year_start ?? req.query?.year_start;
+    const year_end = req.body?.year_end ?? req.query?.year_end;
 
     if (!alpha3 || !year_start || !year_end) {
         return res.status(400).send('國家和年份區間為必填項。');
@@ -278,6 +280,10 @@ router.delete("/mmr/delete", requireLogin, (req, res) => {
 
     if (start > end) {
         return res.status(400).send('起始年份不能大於結束年份。');
+    }
+
+    if (!Number.isInteger(start) || !Number.isInteger(end)) {
+        return res.status(400).send('年份格式錯誤。');
     }
 
     mmrModel.deleteMmrRange(alpha3, start, end, (err, result) => {
