@@ -18,21 +18,31 @@ const requireLogin = (req, res, next) => {
 
 router.get("/countries", (req, res) => {
     mmrModel.getAllCountries((err, rows) => {
-        if (err) return res.status(500).json({ error: "Failed to fetch countries." });
+        if (err) {
+            console.error('Error fetching countries (SQL Error):', err); // 💡 關鍵日誌
+            // 返回 500 狀態讓前端知道 API 失敗了
+            return res.status(500).json({ error: "Failed to fetch countries." });
+        }
         res.json(rows);
     });
 });
 
 router.get("/subregions", (req, res) => {
     mmrModel.getAllSubRegions((err, rows) => {
-        if (err) return res.status(500).json({ error: "Failed to fetch subregions." });
+         if (err) {
+            console.error('Error fetching subregions (SQL Error):', err);
+            return res.status(500).json({ error: "Failed to fetch subregions." });
+        }
         res.json(rows);
     });
 });
 
 router.get("/regions", (req, res) => {
     mmrModel.getAllRegions((err, rows) => {
-        if (err) return res.status(500).json({ error: "Failed to fetch regions." });
+        if (err) {
+            console.error('Error fetching regions (SQL Error):', err);
+            return res.status(500).json({ error: "Failed to fetch regions." });
+        }
         res.json(rows);
     });
 });
@@ -42,23 +52,24 @@ router.get("/regions", (req, res) => {
 // -----------------------------------------------------------
 
 // 功能 1 — 依國家查詢歷年 MMR 
-router.get("/mmr/history/:alpha3", requireLogin, (req, res) => {
-    const alpha3 = req.params.alpha3;
+router.get("/mmr/history", requireLogin, (req, res) => {
+    const alpha3 = req.query.alpha3;
     if (!alpha3 || alpha3 === 'undefined') return res.send('<tr><td colspan="2">請選擇國家</td></tr>');
+    console.log(alpha3);
 
     mmrModel.getMmrHistoryByCountry(alpha3, (err, rows) => {
         if (err) {
-            console.error(err);
+            console.error('Error fetching history (SQL Error):', err);
             return res.status(500).send('<tr><td colspan="2">查詢資料庫錯誤</td></tr>');
         }
-        // 回傳 HJS 渲染片段
+        // 回傳 HJS 渲染片段        
         res.render('partials/mmr_table_1', { data: rows, alpha3: alpha3 });
     });
 });
 
 // 功能 2 — 查某 SubRegion 在某年的所有國家 MMR 
-router.get("/mmr/subregion/:subRegionCode/:year", requireLogin, (req, res) => {
-    const { subRegionCode, year } = req.params;
+router.get("/mmr/subregion", requireLogin, (req, res) => {
+    const { subRegionCode, year } = req.query;
     if (!subRegionCode || !year || subRegionCode === 'undefined' || year === 'undefined') {
         return res.send('<tr><td colspan="2">請選擇次區域和年份</td></tr>');
     }
@@ -72,9 +83,10 @@ router.get("/mmr/subregion/:subRegionCode/:year", requireLogin, (req, res) => {
     });
 });
 
+
 // 功能 3 — 查某 Region 在某年的所有 SubRegion「最大 MMR」
-router.get("/mmr/regionmax/:regionCode/:year", requireLogin, (req, res) => {
-    const { regionCode, year } = req.params;
+router.get("/mmr/regionmax", requireLogin, (req, res) => {
+    const { regionCode, year } = req.query;
     if (!regionCode || !year || regionCode === 'undefined' || year === 'undefined') {
         return res.send('<tr><td colspan="2">請選擇區域和年份</td></tr>');
     }
@@ -215,6 +227,16 @@ router.get("/mmr/global-average", requireLogin, (req, res) => {
         if (err) {
             console.error(err);
             return res.status(500).json({ error: "Failed to fetch global average MMR." });
+        }
+        res.json(rows);
+    });
+});
+
+router.get("/years", requireLogin, (req, res) => {
+    mmrModel.getAllYears((err, rows) => {
+        if (err) {
+            console.error('Error fetching years:', err);
+            return res.status(500).json({ error: "Failed to fetch years." });
         }
         res.json(rows);
     });

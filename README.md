@@ -74,6 +74,16 @@ erDiagram
         float  mmr
     }
 
+   USER {
+        INT id PK                
+        string email UK         
+        string password_hash    
+        string name             
+        TIMESTAMP created_at     
+        TIMESTAMP updated_at     
+    }
+
+
     REGION ||--o{ SUBREGION          : "has"
     SUBREGION ||--o{ INTERMEDIATEREGION : "has"
     SUBREGION ||--o{ COUNTRY          : "contains"

@@ -1,6 +1,7 @@
 const mmr = {};
 let connection;
 
+
 // 設置資料庫連線
 mmr.setConnection = (conn) => {
     connection = conn;
@@ -12,7 +13,9 @@ mmr.setConnection = (conn) => {
 
 // 取得所有國家 (用於選單)
 mmr.getAllCountries = (callback) => {
-    const sql = `SELECT alpha3, name FROM Country ORDER BY name ASC`;
+    const sql = `  SELECT alpha3, name  FROM Country  ORDER BY name ASC`;
+    
+
     connection.query(sql, callback);
 };
 
@@ -25,7 +28,7 @@ mmr.getAllSubRegions = (callback) => {
 // 取得所有區域 (用於選單)
 mmr.getAllRegions = (callback) => {
     const sql = `SELECT region_code, region_name FROM Region ORDER BY region_name ASC`;
-    connection.query(sql, callback);
+   connection.query(sql, callback);
 };
 
 // -----------------------------------------------------------
@@ -46,12 +49,12 @@ mmr.getMmrHistoryByCountry = (alpha3, callback) => {
 // 功能 2 — 查某 SubRegion 在某年的所有國家 MMR (由大到小排序)
 mmr.getMmrBySubRegionAndYear = (subRegionCode, year, callback) => {
     const sql = `
-        SELECT C.name, CMMR.mmr, C.alpha3
-        FROM Country C
-        JOIN CountryMMR CMMR ON C.alpha3 = CMMR.alpha3
-        WHERE C.sub_region_code = ? AND CMMR.year = ?
-        ORDER BY CMMR.mmr DESC
-    `;
+    SELECT C.name AS name, CMMR.mmr, C.alpha3
+    FROM Country C
+    JOIN CountryMMR CMMR ON C.alpha3 = CMMR.alpha3
+    WHERE C.sub_region_code = ? AND CMMR.year = ?
+    ORDER BY CMMR.mmr DESC
+`;
     connection.query(sql, [subRegionCode, year], callback);
 };
 
@@ -75,25 +78,23 @@ mmr.getMaxMmrByRegionAndYear = (regionCode, year, callback) => {
 
 // 功能 4 — 國家名稱關鍵字搜尋 (顯示最新年份的 MMR，並依 MMR DESC 排序)
 mmr.searchCountryByName = (keyword, callback) => {
-    const sql = `
-        SELECT 
-            C.name, 
-            C.alpha3,
-            CMMR_Latest.mmr
-        FROM Country C
-        -- 找出每個國家最新的年份
-        JOIN CountryMMR CMMR_Latest 
-            ON C.alpha3 = CMMR_Latest.alpha3 
-            AND CMMR_Latest.year = (
-                SELECT MAX(year) 
-                FROM CountryMMR 
-                WHERE alpha3 = C.alpha3
-            )
-        WHERE C.name LIKE ?
-        ORDER BY CMMR_Latest.mmr DESC
-    `;
-    // %keyword% for partial match (全模糊搜尋)
-    connection.query(sql, [`%${keyword}%`], callback);
+   const sql = `
+    SELECT 
+        C.name AS name,
+        C.alpha3,
+        CMMR_Latest.mmr
+    FROM Country C
+    JOIN CountryMMR CMMR_Latest 
+        ON C.alpha3 = CMMR_Latest.alpha3 
+        AND CMMR_Latest.year = (
+            SELECT MAX(year) 
+            FROM CountryMMR 
+            WHERE alpha3 = C.alpha3
+        )
+    WHERE C.name LIKE ?
+    ORDER BY CMMR_Latest.mmr DESC
+`;
+connection.query(sql, [`%${keyword}%`], callback);
 };
 
 // 功能 8 — 取得全球平均 MMR (用於趨勢圖)

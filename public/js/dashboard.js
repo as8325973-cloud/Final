@@ -7,7 +7,7 @@ async function loadCountryList() {
   const res = await fetch("/api/countries");
   const data = await res.json();
 
-  const sel = document.getElementById("countrySelect");
+  const sel = document.getElementById("countrySelect1");
   sel.innerHTML = data.map(c => `<option value="${c.alpha3}">${c.name}</option>`).join("");
 
   sel.addEventListener("change", loadCountryHistory);
@@ -17,9 +17,9 @@ async function loadCountryList() {
 
 // 功能一：顯示該國家歷年 MMR
 async function loadCountryHistory() {
-  const code = document.getElementById("countrySelect").value;
+  const code = document.getElementById("countrySelect1").value;
 
-  const res = await fetch(`/api/mmr/history/${code}`);
+  const res = await fetch(`/api/mmr/history?alpha3${code}`);
   const data = await res.json();
 
   const tbody = document.getElementById("countryHistoryTable");
@@ -34,3 +34,4 @@ async function loadCountryHistory() {
     .map(r => `<tr><td>${r.year}</td><td>${r.mmr}</td></tr>`)
     .join("");
 }
+

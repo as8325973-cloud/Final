@@ -14,8 +14,9 @@
 <link rel="stylesheet" href="/css/app.css">
 
 <script src="/htmx.min.js"></script>
-
 <script src="/bootstrap.bundle.min.js"></script>
+<script src="/js/dashboard.js"></script>
+
 
 </head>
 
@@ -33,7 +34,7 @@
 <h2 class="mb-0">MMR 指標資料分析面板</h2>
 </div>
 
-<p class="text-muted">歡迎回來，{{#user}}{{name}}{{/user}}。本儀表板使用 HTMX 實現無頁面刷新數據更新。</p>
+<p class="text-muted">歡迎回來，{{#user}}{{name}}{{/user}}。</p>
 
 <div class="row">
 
@@ -57,7 +58,7 @@
       <div class="card-body">
           <label for="countrySelect1" class="form-label">選擇國家</label>
           <!-- hx-trigger="change, mmrUpdated"：選單改變或 MMR 資料更新時觸發重新載入 -->
-          <select id="countrySelect1" class="form-select mb-3"
+          <select id="countrySelect1"  name="alpha3" class="form-select mb-3"
               hx-get="/api/mmr/history/{{value}}" 
               hx-target="#countryHistoryTable"
               hx-swap="innerHTML"
@@ -71,7 +72,7 @@
               <thead>
                   <tr class="table-primary">
                       <th>年份</th>
-                      <th>MMR (每十萬活產)</th> 
+                      <th>MMR </th> 
                   </tr>
               </thead>
               <tbody id="countryHistoryTable">
@@ -100,7 +101,7 @@
               <thead>
                   <tr class="table-primary">
                       <th>國家名稱</th>
-                      <th>代碼 (alpha3)</th>
+                      <th>代碼 </th>
                       <th>最新 MMR</th>
                   </tr>
               </thead>
@@ -163,7 +164,7 @@
                       <thead>
                           <tr class="table-primary">
                               <th>國家</th>
-                              <th>MMR (每十萬活產)</th>
+                              <th>MMR</th>
                           </tr
                       </thead>
                       <tbody id="subRegionYearTable">
@@ -208,7 +209,7 @@
                       <thead>
                           <tr class="table-primary">
                               <th>次區域</th>
-                              <th>最高 MMR (每十萬活產)</th>
+                              <th>最高 MMR</th>
                           </tr>
                       </thead>
                       <tbody id="regionMaxTable">
@@ -234,12 +235,12 @@
           <!-- hx-post: 發送 POST 請求 -->
           <form hx-post="/api/mmr/add" hx-target="#statusMessageContainer" hx-swap="beforeend">
               <p class="text-muted small">系統將自動計算下一年度（需確保該年記錄不存在）。</p>
-              <label for="addCountrySelect" class="form-label">國家 (alpha3)</label>
+              <label for="addCountrySelect" class="form-label">國家</label>
               <select id="addCountrySelect" name="alpha3" class="form-select mb-3" required>
                   <option value="">-- 請選擇國家 --</option>
               </select>
 
-              <label for="addMmr" class="form-label">MMR 值 (FLOAT)</label>
+              <label for="addMmr" class="form-label">MMR 值</label>
               <input type="number" step="0.1" id="addMmr" name="mmr" class="form-control mb-3" required placeholder="例如：12.5">
 
               <button type="submit" class="btn btn-success w-100">
@@ -255,7 +256,7 @@
       <div class="card-body">
           <!-- hx-post: 發送 POST 請求 -->
           <form hx-post="/api/mmr/update" hx-target="#statusMessageContainer" hx-swap="beforeend">
-              <label for="updateCountrySelect" class="form-label">國家 (alpha3)</label>
+              <label for="updateCountrySelect" class="form-label">國家</label>
               <select id="updateCountrySelect" name="alpha3" class="form-select mb-3" required>
                   <option value="">-- 請選擇國家 --</option>
               </select>
@@ -281,7 +282,7 @@
       <div class="card-body">
           <!-- hx-delete: 發送 DELETE 請求 -->
           <form hx-delete="/api/mmr/delete" hx-target="#statusMessageContainer" hx-swap="beforeend">
-              <label for="deleteCountrySelect" class="form-label">國家 (alpha3)</label>
+              <label for="deleteCountrySelect" class="form-label">國家</label>
               <select id="deleteCountrySelect" name="alpha3" class="form-select mb-3" required>
                   <option value="">-- 請選擇國家 --</option>
               </select>
@@ -320,170 +321,181 @@
 
 <!-- 💡 修正 Chart.js 引用 -->
 
-<script src="https://www.google.com/search?q=https://cdn.jsdelivr.net/npm/chart.js%404.4.2/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 
-<!-- 腳本區塊：初始化選單和圖表 -->
+  <!-- 腳本區塊：初始化選單和圖表 -->
+  <script>
+      // 獲取國家、次區域、區域列表並填充選單
+      document.addEventListener('DOMContentLoaded', async () => {
+          const fetchAndPopulateSelect = async (url, selectIds, valueKey = 'alpha3', textKey = 'name') => {
+              try {
+                  const response = await fetch(url);
+                  // 檢查 API 是否成功
+                  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                  
+                  const data = await response.json();
 
-<script>
-// 獲取國家、次區域、區域列表並填充選單
-document.addEventListener('DOMContentLoaded', async () => {
-const fetchAndPopulateSelect = async (url, selectIds, valueKey = 'alpha3', textKey = 'name') => {
-try {
-const response = await fetch(url);
-const data = await response.json();
+                  // 檢查資料是否為空
+                  if (!data || data.length === 0) {
+                      console.warn(`No data returned from ${url}`);
+                      return;
+                  }
 
-          selectIds.forEach(id =&gt; {
+                  selectIds.forEach(id => {
+                      const select = document.getElementById(id);
+                      if (!select) return;
+
+                      // 清空現有選項 (保留預設 '請選擇')
+                      while (select.options.length > 1) {
+                          select.remove(1);
+                      }
+
+                      data.forEach(item => {
+                          const option = document.createElement('option');
+                          option.value = item[valueKey];
+                          option.textContent = item[textKey];
+                          select.appendChild(option);
+                      });
+                  });
+              } catch (error) {
+                  console.error(`Error fetching data from ${url}:`, error);
+                  selectIds.forEach(id => {
+                      const select = document.getElementById(id);
+                      if (select) {
+                          select.innerHTML = '<option value="">-- 載入錯誤 --</option>';
+                          select.style.borderColor = 'red'; // 標記紅色邊框提示錯誤
+                      }
+                  });
+              }
+          };
+
+          // 1. 填充國家選單 (功能 1, 5, 6, 7)
+          await fetchAndPopulateSelect('/api/countries', ['countrySelect1', 'addCountrySelect', 'updateCountrySelect', 'deleteCountrySelect']);
+
+          // 2. 填充次區域選單 (功能 2)
+          await fetchAndPopulateSelect('/api/subregions', ['subRegionSelect'], 'sub_region_code', 'sub_region_name');
+
+          // 3. 填充區域選單 (功能 3)
+          await fetchAndPopulateSelect('/api/regions', ['regionSelect'], 'region_code', 'region_name');
+
+          // 4. 填充年份選單 (簡單生成 1990-2025)
+          const yearSelectIds = ['subRegionYearSelect', 'regionYearSelect', 'updateYear', 'deleteYearStart', 'deleteYearEnd'];
+          yearSelectIds.forEach(id => {
               const select = document.getElementById(id);
               if (!select) return;
-              
-              // 清空現有選項 (保留預設 &#39;請選擇&#39;)
-              while (select.options.length &gt; 1) {
+
+              // 清空現有選項
+              while (select.options.length > 1) {
                   select.remove(1);
               }
-
-              data.forEach(item =&gt; {
-                  const option = document.createElement(&#39;option&#39;);
-                  option.value = item[valueKey];
-                  option.textContent = item[textKey];
+              for (let y = 2025; y >= 1990; y--) {
+                  const option = document.createElement('option');
+                  option.value = y;
+                  option.textContent = y;
                   select.appendChild(option);
-              });
-          });
-      } catch (error) {
-          console.error(`Error fetching data from ${url}:`, error);
-          selectIds.forEach(id =&gt; {
-              const select = document.getElementById(id);
-              if (select) {
-                  select.innerHTML = &#39;&lt;option value=&quot;&quot;&gt;-- 載入錯誤 --&lt;/option&gt;&#39;;
               }
           });
-      }
-  };
 
-  // 填充國家選單 (功能 1, 5, 6, 7)
-  await fetchAndPopulateSelect(&#39;/api/countries&#39;, [&#39;countrySelect1&#39;, &#39;addCountrySelect&#39;, &#39;updateCountrySelect&#39;, &#39;deleteCountrySelect&#39;]);
-
-  // 填充次區域選單 (功能 2)
-  await fetchAndPopulateSelect(&#39;/api/subregions&#39;, [&#39;subRegionSelect&#39;], &#39;sub_region_code&#39;, &#39;sub_region_name&#39;);
-  
-  // 填充區域選單 (功能 3)
-  await fetchAndPopulateSelect(&#39;/api/regions&#39;, [&#39;regionSelect&#39;], &#39;region_code&#39;, &#39;region_name&#39;);
-
-  // 填充年份選單 (簡單生成 1990-2025)
-  const yearSelectIds = [&#39;subRegionYearSelect&#39;, &#39;regionYearSelect&#39;, &#39;updateYear&#39;, &#39;deleteYearStart&#39;, &#39;deleteYearEnd&#39;];
-  yearSelectIds.forEach(id =&gt; {
-      const select = document.getElementById(id);
-      if (!select) return;
-      
-      // 清空現有選項 (保留預設 &#39;請選擇&#39;)
-      while (select.options.length &gt; 1) {
-          select.remove(1);
-      }
-      for (let y = 2025; y &gt;= 1990; y--) {
-          const option = document.createElement(&#39;option&#39;);
-          option.value = y;
-          option.textContent = y;
-          select.appendChild(option);
-      }
-  });
-
-  // 呼叫圖表初始化
-  initGlobalAverageChart();
-
-
-});
-
-let globalChartInstance = null;
-
-// 功能 8: 全球平均 MMR 圖表初始化
-const initGlobalAverageChart = async () => {
-const ctx = document.getElementById('globalAverageChart');
-if (!ctx) return;
-
-  try {
-      const response = await fetch(&#39;/api/mmr/global-average&#39;);
-      const data = await response.json();
-
-      const years = data.map(item =&gt; item.year);
-      const averages = data.map(item =&gt; item.avg_mmr ? item.avg_mmr.toFixed(1) : 0);
-
-      // 如果圖表已存在，則銷毀它
-      if (globalChartInstance) {
-          globalChartInstance.destroy();
-      }
-
-      globalChartInstance = new Chart(ctx, {
-          type: &#39;line&#39;,
-          data: {
-              labels: years,
-              datasets: [{
-                  label: &#39;全球平均 MMR (每十萬活產)&#39;,
-                  data: averages,
-                  borderColor: &#39;rgb(13, 110, 253)&#39;,
-                  backgroundColor: &#39;rgba(13, 110, 253, 0.2)&#39;,
-                  borderWidth: 2,
-                  fill: true,
-                  tension: 0.3,
-                  pointRadius: 3
-              }]
-          },
-          options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              scales: {
-                  y: {
-                      beginAtZero: true,
-                      title: {
-                          display: true,
-                          text: &#39;MMR (每十萬活產)&#39;
-                      }
-                  }
-              },
-              plugins: {
-                  legend: { display: true },
-                  title: { display: false }
-              }
-          }
+          // 5. 呼叫圖表初始化
+          initGlobalAverageChart();
       });
 
-  } catch (error) {
-      console.error(&quot;Error drawing global average chart:&quot;, error);
-      ctx.parentNode.innerHTML = &#39;&lt;div class=&quot;alert alert-danger&quot;&gt;載入圖表數據失敗。&lt;/div&gt;&#39;;
-  }
+      let globalChartInstance = null;
 
+      // 功能 8: 全球平均 MMR 圖表初始化
+      const initGlobalAverageChart = async () => {
+          const ctx = document.getElementById('globalAverageChart');
+          if (!ctx) return;
 
-};
+          try {
+              const response = await fetch('/api/mmr/global-average');
+              if (!response.ok) throw new Error("API Network response was not ok");
+              
+              const data = await response.json();
 
-// 監聽 mmrUpdated 事件，重新載入圖表和功能 1 (如果已選國家)
-document.body.addEventListener('mmrUpdated', (e) => {
-console.log('MMR Data Updated, refreshing...');
+              if (!data || data.length === 0) {
+                  throw new Error("No data available for chart");
+              }
 
-  // 重新繪製圖表 (功能 8)
-  initGlobalAverageChart();
+              const years = data.map(item => item.year);
+              const averages = data.map(item => item.avg_mmr ? item.avg_mmr.toFixed(1) : 0);
 
-  // 重新觸發功能 1, 2, 3, 4 的 HTMX 請求
-  const triggerElements = [&#39;countrySelect1&#39;, &#39;searchKeyword&#39;, &#39;subRegionSelect&#39;, &#39;regionSelect&#39;];
-  triggerElements.forEach(id =&gt; {
-      const el = document.getElementById(id);
-      if (el) {
-          // 檢查是否為 input (search) 或 select
-          if (el.tagName === &#39;SELECT&#39; &amp;&amp; el.value !== &#39;undefined&#39; &amp;&amp; el.value !== &#39;&#39;) {
-              htmx.trigger(el, &quot;change&quot;);
-          } else if (el.tagName === &#39;INPUT&#39; &amp;&amp; el.value &amp;&amp; el.value.length &gt;= 2) {
-              htmx.trigger(el, &quot;input&quot;);
+              // 如果圖表已存在，則銷毀它 (避免重複繪製)
+              if (globalChartInstance) {
+                  globalChartInstance.destroy();
+              }
+
+              globalChartInstance = new Chart(ctx, {
+                  type: 'line',
+                  data: {
+                      labels: years,
+                      datasets: [{
+                          label: '全球平均 MMR (每十萬活產)',
+                          data: averages,
+                          borderColor: 'rgb(13, 110, 253)',
+                          backgroundColor: 'rgba(13, 110, 253, 0.2)',
+                          borderWidth: 2,
+                          fill: true,
+                          tension: 0.3,
+                          pointRadius: 3
+                      }]
+                  },
+                  options: {
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      scales: {
+                          y: {
+                              beginAtZero: true,
+                              title: {
+                                  display: true,
+                                  text: 'MMR (每十萬活產)'
+                              }
+                          }
+                      },
+                      plugins: {
+                          legend: { display: true },
+                          title: { display: false }
+                      }
+                  }
+              });
+
+          } catch (error) {
+              console.error("Error drawing global average chart:", error);
+              // 在圖表區域顯示錯誤訊息
+              ctx.parentNode.innerHTML = `<div class="alert alert-warning d-flex align-items-center" role="alert">
+                  <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                  <div>無法載入圖表數據: ${error.message}</div>
+              </div>`;
           }
-      }
-  });
-  
-  // 清除狀態訊息
-  setTimeout(() =&gt; {
-      const container = document.getElementById(&#39;statusMessageContainer&#39;);
-      if (container) container.innerHTML = &#39;&#39;;
-  }, 5000);
+      };
 
+      // 監聽 mmrUpdated 事件 (由 HTMX 觸發)，重新載入圖表和功能 1 (如果已選國家)
+      document.body.addEventListener('mmrUpdated', (e) => {
+          console.log('MMR Data Updated, refreshing...');
 
-});
+          // 重新繪製圖表 (功能 8)
+          initGlobalAverageChart();
 
-</script>
+          // 重新觸發功能 1, 2, 3, 4 的 HTMX 請求以更新表格
+          const triggerElements = ['countrySelect1', 'searchKeyword', 'subRegionSelect', 'regionSelect'];
+          triggerElements.forEach(id => {
+              const el = document.getElementById(id);
+              if (el) {
+                  // 檢查是否為 input (search) 或 select
+                  if (el.tagName === 'SELECT' && el.value !== 'undefined' && el.value !== '') {
+                      htmx.trigger(el, "change");
+                  } else if (el.tagName === 'INPUT' && el.value && el.value.length >= 2) {
+                      htmx.trigger(el, "input");
+                  }
+              }
+          });
 
+          // 5秒後清除狀態訊息
+          setTimeout(() => {
+              const container = document.getElementById('statusMessageContainer');
+              if (container) container.innerHTML = '';
+          }, 5000);
+      });
+  </script>
 </body>
 </html>

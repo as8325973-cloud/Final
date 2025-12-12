@@ -2,18 +2,19 @@ const express = require('express');
 const db = require('mysql2');
 const session = require('express-session');
 const path = require('path');
-const mmrModel = require('./models/mmr'); // 💡 引入 Model 層
 
+const configs = require('./config');
+const mmrModel   = require('./models/mmr');   // MMR 資料存取
+const auth = require('./routes/auth');  // 登入/註冊
+const apiRouter  = require('./routes/api');   // MMR API
 const app = express();
 
 
 // 設定視圖引擎
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hjs');
-
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"));
-
 
 // 啟用 session
 app.use(
@@ -27,7 +28,7 @@ app.use(
   })
 );
 
-const configs = require('./config');
+
 const connection = db.createConnection(configs.db);
 
 connection.connect((err) => {
@@ -39,17 +40,15 @@ connection.connect((err) => {
   }
 });
 
-// ====== 掛上 router（一定要在 wildcard 之前） ======
-const auth = require('./routes/auth');
-auth.connection = connection;
-// Auth 路由掛載在根路徑 (如 /signin)
+
+
+apiRouter.connection = connection;
 app.use('/', auth);
 
-const api = require('./routes/api');
-api.connection = connection;
-// 💡 將 DB 連線注入 Model (供 API 路由呼叫 Model 時使用)
+auth.connection = connection;
+app.use('/api', apiRouter);
+
 mmrModel.setConnection(connection);
-app.use('/api', api);
 
 
 // ====== 首頁 (導向 Dashboard 或 登入頁) ======

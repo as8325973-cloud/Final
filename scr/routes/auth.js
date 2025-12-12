@@ -41,7 +41,7 @@ app.get('/signup', (req, res) => {
 
 // POST /signin 處理登入
 app.post('/signin', (req, res) => {
-  const { email, password } = req.body || {};
+  const { email, password } = req.body;
 
   const SQL = `SELECT id, email, password_hash, name 
                FROM User WHERE email = ?`;
