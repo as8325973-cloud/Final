@@ -1,0 +1,12 @@
+{{#data}}
+
+<tr>
+    <td>{{name}}</td>
+    <td>{{mmr}}</td>
+</tr>
+{{/data}}
+{{^data}}
+<tr>
+    <td colspan="2">找不到該次區域在指定年份的 MMR 記錄</td>
+</tr>
+{{/data}}

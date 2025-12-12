@@ -18,6 +18,10 @@ Global MMR Visualization Website 是一個用來瀏覽與管理各國孕產婦�
 - 針對指定國家與年份，新增下一年度 MMR 或修改既有 MMR。
 - 依國家與年份區間批次刪除 MMR 紀錄，方便清理錯誤資料。
 
+**登入頁面**
+- 帳號：test@example.com
+- 密碼：password123
+
 ---
 
 ## 2) 功能說明
@@ -73,6 +77,16 @@ erDiagram
         int    year   PK
         float  mmr
     }
+
+   USER {
+        INT id PK                
+        string email UK         
+        string password_hash    
+        string name             
+        TIMESTAMP created_at     
+        TIMESTAMP updated_at     
+    }
+
 
     REGION ||--o{ SUBREGION          : "has"
     SUBREGION ||--o{ INTERMEDIATEREGION : "has"

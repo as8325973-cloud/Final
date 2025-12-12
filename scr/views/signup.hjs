@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+
+<html lang="zh-TW">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{title}}</title>
+
+<!-- 統一引入資源 -->
+<link rel="stylesheet" href="/bootstrap.min.css">
+<link rel="stylesheet" href="/bootstrap-icons.min.css">
+<link rel="stylesheet" href="/css/app.css">
+
+<script src="/htmx.min.js"></script>
+<script src="/bootstrap.bundle.min.js"></script>
+
+
+</head>
+
+<body class="container">
+
+<!-- 頁首：專案標題 (與 signin.hjs 保持一致) -->
+<header class="text-center my-4">
+    <h1 class="text-primary">全球 MMR 可視化與管理系統</h1>
+    <p class="text-muted mb-0">Global Maternal Mortality Ratio Visualization & Management</p>
+</header>
+
+<main id="main" class="my-4">
+    <!-- 主內容：置中登入卡片 (與 signin.hjs 保持一致的置中樣式) -->
+    <div class="d-flex align-items-center justify-content-center" style="min-height: 60vh;">
+        <!-- 統一卡片樣式和寬度 -->
+        <div class="card shadow-sm" style="width: 420px;"> 
+            <div class="card-body p-5">
+                <div class="text-center mb-4">
+                    <!-- Logo / Title (與 signin.hjs 保持一致) -->
+                    <div class="mb-3">
+                        <i class="bi bi-bar-chart-line" style="font-size: 2.5rem; color:#0d6efd;"></i>
+                        <h3 class="mt-2 mb-0" style="font-weight:600;">MMR Dashboard</h3>                        
+                    </div>
+                    <p class="text-muted">建立您的帳號</p>
+                </div>
+
+                <!-- 錯誤訊息 -->
+                {{#error}}
+                <div class="alert alert-danger py-2">
+                    {{error}}
+                </div>
+                {{/error}}
+
+                <!-- 註冊表單 -->
+                <form action="/signup" method="POST">                    
+
+                    <div class="mb-3">
+                        <label for="name" class="form-label">您的全名
+                            <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-lg" id="name" name="name" required
+                            placeholder="E.g., 王小明" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email 地址
+                            <span class="text-danger">*</span></label>
+                        <input type="email" class="form-control form-control-lg" id="email" name="email"
+                            required placeholder="your.email@company.com" />
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="password" class="form-label">密碼
+                            <span class="text-danger">*</span></label>
+                        <input type="password" class="form-control form-control-lg" id="password" name="password"
+                            required minlength="6" placeholder="最少 6 個字元" />
+                    </div>
+
+                    <!-- 修正按鈕樣式: 統一使用 btn-primary -->
+                    <button type="submit" class="btn btn-primary btn-lg w-100 mb-3">
+                        <i class="bi bi-person-plus"></i>
+                        註冊新帳號
+                    </button>
+                </form>
+
+                <div class="text-center">
+                    <p class="text-muted">
+                        已經有帳號了？
+                        <!-- 修正連結: 指向 /signin 路由 -->
+                        <a href="/signin">登入</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- 頁腳 (與 signin.hjs 保持一致) -->
+<footer class="text-center text-muted mt-5 py-3 border-top">
+    <p>&copy; 2025 MMR Visualization Project</p>
+</footer>
+
+
+</body>
+
+</html>

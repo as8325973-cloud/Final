@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+
+    <!-- 統一引入資源 -->
+
+    <link rel="stylesheet" href="/bootstrap.min.css">
+    <link rel="stylesheet" href="/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="/css/app.css">
+
+    <script src="/htmx.min.js"></script>
+    <script src="/bootstrap.bundle.min.js"></script>
+    <script src="/js/dashboard.js"></script>
+
+
+</head>
+
+<body>
+
+    {{> navbar}}
+
+    <div class="container mt-4">
+
+        <!-- 狀態訊息容器 (用於 CRUD 操作回傳訊息) -->
+
+        <div id="statusMessageContainer" class="fixed-top-0 end-0 p-3" style="z-index: 1050;"></div>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0">MMR 指標資料分析面板</h2>
+        </div>
+
+        <p class="text-muted">歡迎回來，{{#user}}{{name}}{{/user}}。</p>
+
+        <div class="row">
+
+            <!-- 左側欄位: 查詢與視覺化功能 (1, 2, 3, 4, 8) -->
+
+            <div class="col-lg-8">
+
+                <!-- 功能 8 — 全球平均 MMR 趨勢圖 (自選功能) -->
+                <div class="card mb-4 bg-light shadow-sm">
+                    <div class="card-header fw-bold bg-primary text-white"> 全球平均 MMR 趨勢圖 (Global Average)</div>
+                    <div class="card-body">
+                        <p class="card-text text-muted">顯示全球各年度平均孕產婦死亡率的趨勢。</p>
+                        <!-- 圖表 Canvas -->
+                        <div style="height: 350px;"><canvas id="globalAverageChart"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- 功能 1 — 依國家查詢歷年 MMR -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header fw-bold"> 依國家查詢歷年 MMR (由小到大排序)</div>
+                    <div class="card-body">
+                        <label for="countrySelect1" class="form-label">選擇國家</label>
+                        <!-- hx-trigger="change, mmrUpdated"：選單改變或 MMR 資料更新時觸發重新載入 -->
+                        <select id="countrySelect1" name="alpha3" class="form-select mb-3"
+                            hx-get="/api/mmr/history/{{value}}" hx-target="#countryHistoryTable" hx-swap="innerHTML"
+                            hx-indicator="#loadingIndicator1" hx-trigger="change, mmrUpdated">
+                            <option value="undefined">-- 請選擇國家 --</option>
+                        </select>
+                        <span id="loadingIndicator1"
+                            class="spinner-border spinner-border-sm text-primary htmx-indicator" role="status"
+                            aria-hidden="true"></span>
+
+                        <table class="table table-bordered table-hover">
+                            <thead>
+                                <tr class="table-primary">
+                                    <th>年份</th>
+                                    <th>MMR </th>
+                                </tr>
+                            </thead>
+                            <tbody id="countryHistoryTable">
+                                <tr>
+                                    <td colspan="2">請選擇一個國家來查看歷史數據</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 功能 4 — 國家名稱關鍵字搜尋 -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header fw-bold"> 國家名稱關鍵字搜尋 (最新 MMR，高到低排序)</div>
+                    <div class="card-body">
+                        <label for="searchKeyword" class="form-label">國家名稱關鍵字 (至少 2 個字元)</label>
+                        <!-- hx-trigger="input changed delay:500ms"：輸入停止 500ms 後發送請求 -->
+                        <input type="search" id="searchKeyword" class="form-control mb-3" name="keyword"
+                            hx-get="/api/search/country" hx-target="#searchResultTable"
+                            hx-trigger="input changed delay:500ms, mmrUpdated" hx-indicator="#loadingIndicator4"
+                            placeholder="例如：China, Canada...">
+                        <span id="loadingIndicator4"
+                            class="spinner-border spinner-border-sm text-primary htmx-indicator" role="status"
+                            aria-hidden="true"></span>
+
+                        <table class="table table-bordered table-hover">
+                            <thead>
+                                <tr class="table-primary">
+                                    <th>國家名稱</th>
+                                    <th>代碼 </th>
+                                    <th>最新 MMR</th>
+                                </tr>
+                            </thead>
+                            <tbody id="searchResultTable">
+                                <tr>
+                                    <td colspan="3">請輸入關鍵字進行搜尋</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 功能 2 & 3: 次區域和區域查詢 -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header fw-bold">查詢比較功能</div>
+                    <div class="card-body">
+                        <ul class="nav nav-tabs" id="myTab" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="subregion-tab" data-bs-toggle="tab"
+                                    data-bs-target="#subregion-pane" type="button" role="tab"> 次區域國家 MMR</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="regionmax-tab" data-bs-toggle="tab"
+                                    data-bs-target="#regionmax-pane" type="button" role="tab"> 區域最大 MMR</button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content pt-3" id="myTabContent">
+
+                            <!-- 功能 2 — 查某 SubRegion 在某年的所有國家 MMR -->
+                            <div class="tab-pane fade show active" id="subregion-pane" role="tabpanel" tabindex="0">
+                                <p class="text-muted">依指定的次區域和年份，列出所有國家 MMR (高到低)。</p>
+
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="subRegionSelect" class="form-label">選擇次區域</label>
+                                        <!-- hx-get 綁定到次區域選單的 change 事件 -->
+                                        <select id="subRegionSelect" class="form-select" name="subRegionCode"
+                                            hx-get="/api/mmr/subregion/{{value}}/" hx-target="#subRegionYearTable"
+                                            hx-swap="innerHTML" hx-indicator="#loadingIndicator2"
+                                            hx-include="#subRegionYearSelect" hx-trigger="change, mmrUpdated">
+                                            <option value="undefined">-- 請選擇次區域 --</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="subRegionYearSelect" class="form-label">選擇年份</label>
+                                        <select id="subRegionYearSelect" class="form-select" name="year"
+                                            hx-get="/api/mmr/subregion/" hx-target="#subRegionYearTable"
+                                            hx-swap="innerHTML" hx-indicator="#loadingIndicator2"
+                                            hx-include="#subRegionSelect" hx-trigger="change, mmrUpdated">
+                                            <option value="undefined">-- 請選擇年份 --</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <span id="loadingIndicator2"
+                                    class="spinner-border spinner-border-sm text-primary htmx-indicator mt-2"
+                                    role="status" aria-hidden="true"></span>
+
+                                <table class="table table-bordered table-hover mt-3">
+                                    <thead>
+                                        <tr class="table-primary">
+                                            <th>國家</th>
+                                            <th>MMR</th>
+                                        </tr </thead>
+                                    <tbody id="subRegionYearTable">
+                                        <tr>
+                                            <td colspan="2">請選擇次區域和年份</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- 功能 3 — 查某 Region 在某年的所有 SubRegion「最大 MMR」 -->
+                            <div class="tab-pane fade" id="regionmax-pane" role="tabpanel" tabindex="0">
+                                <p class="text-muted">依指定的區域和年份，顯示該區域內各次區域的最高 MMR。</p>
+
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="regionSelect" class="form-label">選擇區域</label>
+                                        <select id="regionSelect" class="form-select" name="regionCode"
+                                            hx-get="/api/mmr/regionmax/{{value}}/" hx-target="#regionMaxTable"
+                                            hx-swap="innerHTML" hx-indicator="#loadingIndicator3"
+                                            hx-include="#regionYearSelect" hx-trigger="change, mmrUpdated">
+                                            <option value="undefined">-- 請選擇區域 --</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="regionYearSelect" class="form-label">選擇年份</label>
+                                        <select id="regionYearSelect" class="form-select" name="year"
+                                            hx-get="/api/mmr/regionmax/" hx-target="#regionMaxTable" hx-swap="innerHTML"
+                                            hx-indicator="#loadingIndicator3" hx-include="#regionSelect"
+                                            hx-trigger="change, mmrUpdated">
+                                            <option value="undefined">-- 請選擇年份 --</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <span id="loadingIndicator3"
+                                    class="spinner-border spinner-border-sm text-primary htmx-indicator mt-2"
+                                    role="status" aria-hidden="true"></span>
+
+                                <table class="table table-bordered table-hover mt-3">
+                                    <thead>
+                                        <tr class="table-primary">
+                                            <th>次區域</th>
+                                            <th>最高 MMR</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="regionMaxTable">
+                                        <tr>
+                                            <td colspan="2">請選擇區域和年份</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+            </div> <!-- end col-lg-8 -->
+
+            <!-- 右側欄位: CRUD 功能 (5, 6, 7) -->
+
+            <div class="col-lg-4">
+
+                <!-- 功能 5 — 新增某國家下一年度的 MMR -->
+                <div class="card mb-4 bg-success-subtle shadow-sm border-success">
+                    <div class="card-header fw-bold text-success"> 新增 MMR 記錄</div>
+                    <div class="card-body">
+                        <!-- hx-post: 發送 POST 請求 -->
+                        <form hx-post="/api/mmr/add" hx-target="#statusMessageContainer" hx-swap="beforeend">
+                            <p class="text-muted small">系統將自動計算下一年度（需確保該年記錄不存在）。</p>
+                            <label for="addCountrySelect" class="form-label">國家</label>
+                            <select id="addCountrySelect" name="alpha3" class="form-select mb-3" required>
+                                <option value="">-- 請選擇國家 --</option>
+                            </select>
+
+                            <label for="addMmr" class="form-label">MMR 值</label>
+                            <input type="number" step="0.1" id="addMmr" name="mmr" class="form-control mb-3" required
+                                placeholder="例如：12.5">
+
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="bi bi-plus-circle"></i> 新增下一年度資料
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 功能 6 — 更新某國家某年的 MMR -->
+                <div class="card mb-4 bg-warning-subtle shadow-sm border-warning">
+                    <div class="card-header fw-bold text-warning"> 更新 MMR 記錄</div>
+                    <div class="card-body">
+                        <!-- hx-post: 發送 POST 請求 -->
+                        <form hx-post="/api/mmr/update" hx-target="#statusMessageContainer" hx-swap="beforeend">
+                            <label for="updateCountrySelect" class="form-label">國家</label>
+                            <select id="updateCountrySelect" name="alpha3" class="form-select mb-3" required>
+                                <option value="">-- 請選擇國家 --</option>
+                            </select>
+
+                            <label for="updateYear" class="form-label">年份</label>
+                            <select id="updateYear" name="year" class="form-select mb-3" required>
+                                <option value="">-- 請選擇年份 --</option>
+                            </select>
+
+                            <label for="updateMmr" class="form-label">新 MMR 值</label>
+                            <input type="number" step="0.1" id="updateMmr" name="mmr" class="form-control mb-3" required
+                                placeholder="例如：15.0">
+
+                            <button type="submit" class="btn btn-warning w-100">
+                                <i class="bi bi-pencil-square"></i> 更新指定年份資料
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 功能 7 — 刪除某國家某年份區間的 MMR -->
+                <div class="card mb-4 bg-danger-subtle shadow-sm border-danger">
+                    <div class="card-header fw-bold text-danger"> 刪除 MMR 區間記錄</div>
+                    <div class="card-body">
+                        <!-- hx-delete: 發送 DELETE 請求 -->
+                        <form hx-delete="/api/mmr/delete" hx-target="#statusMessageContainer" hx-swap="beforeend">
+                            <label for="deleteCountrySelect" class="form-label">國家</label>
+                            <select id="deleteCountrySelect" name="alpha3" class="form-select mb-3" required>
+                                <option value="">-- 請選擇國家 --</option>
+                            </select>
+
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <label for="deleteYearStart" class="form-label">起始年份</label>
+                                    <select id="deleteYearStart" name="year_start" class="form-select" required>
+                                        <option value="">-- 選擇 --</option>
+                                    </select>
+                                </div>
+                                <div class="col-6">
+                                    <label for="deleteYearEnd" class="form-label">結束年份</label>
+                                    <select id="deleteYearEnd" name="year_end" class="form-select" required>
+                                        <option value="">-- 選擇 --</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-danger w-100 mt-3">
+                                <i class="bi bi-trash"></i> 刪除區間資料
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+
+            </div> <!-- end col-lg-4 -->
+        </div> <!-- end row -->
+
+        <footer class="text-center text-muted mt-5 py-3 border-top">
+            <p>&copy; 2025 MMR Visualization Project. Data from UN World Population Prospects.</p>
+        </footer>
+
+    </div>
+
+    <!-- 💡 修正 Chart.js 引用 -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+
+    <!-- 腳本區塊：初始化選單和圖表 -->
+    <script>
+        // 獲取國家、次區域、區域列表並填充選單
+        document.addEventListener('DOMContentLoaded', async () => {
+            const fetchAndPopulateSelect = async (url, selectIds, valueKey = 'alpha3', textKey = 'name') => {
+                try {
+                    const response = await fetch(url);
+                    // 檢查 API 是否成功
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                    const data = await response.json();
+
+                    // 檢查資料是否為空
+                    if (!data || data.length === 0) {
+                        console.warn(`No data returned from ${url}`);
+                        return;
+                    }
+
+                    selectIds.forEach(id => {
+                        const select = document.getElementById(id);
+                        if (!select) return;
+
+                        // 清空現有選項 (保留預設 '請選擇')
+                        while (select.options.length > 1) {
+                            select.remove(1);
+                        }
+
+                        data.forEach(item => {
+                            const option = document.createElement('option');
+                            option.value = item[valueKey];
+                            option.textContent = item[textKey];
+                            select.appendChild(option);
+                        });
+                    });
+                } catch (error) {
+                    console.error(`Error fetching data from ${url}:`, error);
+                    selectIds.forEach(id => {
+                        const select = document.getElementById(id);
+                        if (select) {
+                            select.innerHTML = '<option value="">-- 載入錯誤 --</option>';
+                            select.style.borderColor = 'red'; // 標記紅色邊框提示錯誤
+                        }
+                    });
+                }
+            };
+
+            // 1. 填充國家選單 (功能 1, 5, 6, 7)
+            await fetchAndPopulateSelect('/api/countries', ['countrySelect1', 'addCountrySelect', 'updateCountrySelect', 'deleteCountrySelect']);
+
+            // 2. 填充次區域選單 (功能 2)
+            await fetchAndPopulateSelect('/api/subregions', ['subRegionSelect'], 'sub_region_code', 'sub_region_name');
+
+            // 3. 填充區域選單 (功能 3)
+            await fetchAndPopulateSelect('/api/regions', ['regionSelect'], 'region_code', 'region_name');
+
+            // 4. 填充年份選單 (簡單生成 1990-2025)
+            // 4. CRUD 用年份選單（保留寫死 1990-2025）
+            // ⚠️ 注意：這裡不要再包含 subRegionYearSelect / regionYearSelect
+            const yearSelectIds = ['updateYear', 'deleteYearStart', 'deleteYearEnd'];
+            yearSelectIds.forEach(id => {
+                const select = document.getElementById(id);
+                if (!select) return;
+
+                while (select.options.length > 1) {
+                    select.remove(1);
+                }
+                for (let y = 2025; y >= 1990; y--) {
+                    const option = document.createElement('option');
+                    option.value = y;
+                    option.textContent = y;
+                    select.appendChild(option);
+                }
+            });
+
+            // ✅ 動態更新年份選單（保留第 1 個 placeholder）
+            const replaceYearOptions = (selectId, years) => {
+                const select = document.getElementById(selectId);
+                if (!select) return;
+
+                while (select.options.length > 1) {
+                    select.remove(1);
+                }
+
+                years.forEach(y => {
+                    const opt = document.createElement('option');
+                    opt.value = y;
+                    opt.textContent = y;
+                    select.appendChild(opt);
+                });
+            };
+
+            // ✅ 當選擇 Region 時，載入該 Region 有資料的年份
+            const regionSelectEl = document.getElementById('regionSelect');
+            if (regionSelectEl) {
+                regionSelectEl.addEventListener('change', async () => {
+                    const regionCode = regionSelectEl.value;
+
+                    // 如果還是 placeholder，就清空年份（只留第一個選項）
+                    if (!regionCode || regionCode === 'undefined') {
+                        replaceYearOptions('regionYearSelect', []);
+                        return;
+                    }
+
+                    try {
+                        const resp = await fetch(`/api/years/region?regionCode=${encodeURIComponent(regionCode)}`);
+                        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                        const rows = await resp.json();        // [{year: 2020}, ...]
+                        const years = rows.map(r => r.year);   // [2020, 2019, ...]
+                        replaceYearOptions('regionYearSelect', years);
+                    } catch (e) {
+                        console.error("load region years failed:", e);
+                        replaceYearOptions('regionYearSelect', []);
+                    }
+                });
+            }
+
+            // （可選）當選擇 SubRegion 時，載入該 SubRegion 有資料的年份
+            const subRegionSelectEl = document.getElementById('subRegionSelect');
+            if (subRegionSelectEl) {
+                subRegionSelectEl.addEventListener('change', async () => {
+                    const subRegionCode = subRegionSelectEl.value;
+
+                    if (!subRegionCode || subRegionCode === 'undefined') {
+                        replaceYearOptions('subRegionYearSelect', []);
+                        return;
+                    }
+
+                    try {
+                        const resp = await fetch(`/api/years/subregion?subRegionCode=${encodeURIComponent(subRegionCode)}`);
+                        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                        const rows = await resp.json();
+                        const years = rows.map(r => r.year);
+                        replaceYearOptions('subRegionYearSelect', years);
+                    } catch (e) {
+                        console.error("load subregion years failed:", e);
+                        replaceYearOptions('subRegionYearSelect', []);
+                    }
+                });
+            }
+
+
+            // 5. 呼叫圖表初始化
+            initGlobalAverageChart();
+        });
+
+        let globalChartInstance = null;
+
+        // 功能 8: 全球平均 MMR 圖表初始化
+        const initGlobalAverageChart = async () => {
+            const ctx = document.getElementById('globalAverageChart');
+            if (!ctx) return;
+
+            try {
+                const response = await fetch('/api/mmr/global-average');
+                if (!response.ok) throw new Error("API Network response was not ok");
+
+                const data = await response.json();
+
+                if (!data || data.length === 0) {
+                    throw new Error("No data available for chart");
+                }
+
+                const years = data.map(item => item.year);
+                const averages = data.map(item => item.avg_mmr ? item.avg_mmr.toFixed(1) : 0);
+
+                // 如果圖表已存在，則銷毀它 (避免重複繪製)
+                if (globalChartInstance) {
+                    globalChartInstance.destroy();
+                }
+
+                globalChartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: years,
+                        datasets: [{
+                            label: '全球平均 MMR (per 100,000 live births)',
+                            data: averages,
+                            borderColor: 'rgb(13, 110, 253)',
+                            backgroundColor: 'rgba(13, 110, 253, 0.2)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'MMR (per 100,000 live births)'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: true },
+                            title: { display: false }
+                        }
+                    }
+                });
+
+            } catch (error) {
+                console.error("Error drawing global average chart:", error);
+                // 在圖表區域顯示錯誤訊息
+                ctx.parentNode.innerHTML = `<div class="alert alert-warning d-flex align-items-center" role="alert">
+                  <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                  <div>無法載入圖表數據: ${error.message}</div>
+              </div>`;
+            }
+        };
+
+        // 監聽 mmrUpdated 事件 (由 HTMX 觸發)，重新載入圖表和功能 1 (如果已選國家)
+        document.body.addEventListener('mmrUpdated', (e) => {
+            console.log('MMR Data Updated, refreshing...');
+
+            // 重新繪製圖表 (功能 8)
+            initGlobalAverageChart();
+
+            // 重新觸發功能 1, 2, 3, 4 的 HTMX 請求以更新表格
+            const triggerElements = ['countrySelect1', 'searchKeyword', 'subRegionSelect', 'regionSelect'];
+            triggerElements.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    // 檢查是否為 input (search) 或 select
+                    if (el.tagName === 'SELECT' && el.value !== 'undefined' && el.value !== '') {
+                        htmx.trigger(el, "change");
+                    } else if (el.tagName === 'INPUT' && el.value && el.value.length >= 2) {
+                        htmx.trigger(el, "input");
+                    }
+                }
+            });
+
+            // 5秒後清除狀態訊息
+            setTimeout(() => {
+                const container = document.getElementById('statusMessageContainer');
+                if (container) container.innerHTML = '';
+            }, 5000);
+        });
+    </script>
+</body>
+
+</html>

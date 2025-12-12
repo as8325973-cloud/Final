@@ -1,73 +1,66 @@
-# Docker Compose 檔案格式版本
-version: '3.8'
+# 注意：Compose v2 之後 version 其實可省略，但保留也能跑
+# 如果你想消除警告，可以把 version 這行刪掉
+version: "3.8"
 
-# 專案名稱 (可選, 預設為資料夾名稱)
-name: McDonaldApp
+name: FinalApp
 
-# 定義要啟動的服務 (Service)
 services:
-
-  # 1. MySQL 資料庫服務
   mysql:
-    # 使用 MySQL 官方映像檔
-    image: mysql:latest
-    # 容器名稱
+    image: mysql:8.0
     container_name: mysql_db
-    # 設定虛擬網路別名，Web 服務可以透過這個別名連線到資料庫
+
+    # 連到同一個 network，webapp 可用 host: mysql 連線
     networks:
-      mcdonald-app:
+      final-app:
         aliases:
           - mysql
-    # 設定環境變數，用於初始化和配置 MySQL
+
     environment:
-      # 使用環境變數來避免硬編碼密碼 (從 .env 檔案載入)
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    # 設置資料庫啟動後的健康檢查 (Health Check)
+
+    # ✅ 健康檢查建議加上 root 密碼，避免某些情況 ping 不穩定
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD} --silent"]
       interval: 10s
       timeout: 10s
-      retries: 5
-    # 設定資料卷 (Volumes)
-    volumes:
-      # 確保資料庫資料持久化
-      # McDonaldVolume 會在第一次啟動時自動建立
-      - McDonaldVolume:/var/lib/mysql
-      # 將您的 McDump.sql 檔案掛載到初始化目錄
-      # 假設 McDump.sql 位於專案根目錄下
-      - ./McDump_Final.sql:/docker-entrypoint-initdb.d/McDump_Final.sql
+      retries: 10
+      start_period: 20s
 
-  # 2. Web 應用程式服務
+    volumes:
+      # ✅ 這裡用的 volume 名稱是 FinalVolume，所以底下 volumes 也要叫 FinalVolume
+      - FinalVolume:/var/lib/mysql
+
+      # ✅ 初始化 SQL：確保是 .sql 並放進 initdb.d
+      # 注意：這個只會在「資料庫第一次初始化」時執行
+      - ./Final_Latest.sql:/docker-entrypoint-initdb.d/Final_Latest.sql:ro
+
   webapp:
-    # 告知 Compose 使用當前目錄下的 Dockerfile 進行建置
     build: .
-    # 容器名稱
-    container_name: mcdonald_webapp
-    # 確保 Web 服務在資料庫健康後才啟動
+    container_name: final_webapp
+
     depends_on:
       mysql:
         condition: service_healthy
-    # 將容器的 Port 80 對應到主機的 Port 8080 (您可以修改 8080)
-    # 請注意：部署到遠端機器時，通常會使用您被分配到的 Port 號
+
     ports:
       - "8080:80"
-    # 連接到虛擬網路
+
     networks:
-      - mcdonald-app
-    # 設定環境變數，讓 Web 應用程式可以從程式碼中存取
+      - final-app
+
     environment:
+      MYSQL_HOST: mysql
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
 
-# 定義 Volumes，用於資料持久化
 volumes:
-  McDonaldVolume:
+  # ✅ 這裡名稱要跟上面一模一樣：FinalVolume
+  FinalVolume:
 
-# 定義虛擬網路
 networks:
-  mcdonald-app:
-    # 使用預設的 bridge 網路
+  final-app:
+    driver: bridge

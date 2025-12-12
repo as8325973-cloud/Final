@@ -34,4 +34,4 @@ EXPOSE 80
 
 #如果是正式部署，建議使用：CMD [ "node", "app.js" ]
 
-CMD ["nodemon", "-L", "app.js"]
+CMD ["nodemon", "-L", "scr/app.js"]

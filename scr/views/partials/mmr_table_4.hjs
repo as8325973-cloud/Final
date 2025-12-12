@@ -1,0 +1,13 @@
+{{#data}}
+
+<tr>
+    <td>{{name}}</td>
+    <td>{{alpha3}}</td>
+    <td>{{mmr}}</td>
+</tr>
+{{/data}}
+{{^data}}
+<tr>
+    <td colspan="3">找不到符合關鍵字的國家</td>
+</tr>
+{{/data}}
