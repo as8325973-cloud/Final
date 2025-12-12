@@ -13,7 +13,14 @@ mmr.setConnection = (conn) => {
 
 // 取得所有國家 (用於選單)
 mmr.getAllCountries = (callback) => {
-    const sql = `  SELECT alpha3, name  FROM Country  ORDER BY name ASC`;
+    const sql = `
+    SELECT DISTINCT C.alpha3, C.name
+    FROM Country C
+    JOIN CountryMMR M ON M.alpha3 = C.alpha3
+    -- 如果你也想排除 mmr 欄位是 NULL 的資料，加這行：
+    -- WHERE M.mmr IS NOT NULL
+    ORDER BY C.name ASC
+  `;
     
 
     connection.query(sql, callback);
